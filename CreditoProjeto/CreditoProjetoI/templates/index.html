@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block titulo %}Clientes{% endblock %}
+{% block conteudo %}
+
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+    <div style="background:#fff;border:0.5px solid #e5e7eb;border-radius:10px;padding:14px;">
+        <div style="font-size:12px;color:#888;margin-bottom:4px;">Total Clientes</div>
+        <div style="font-size:26px;font-weight:500;color:#1a2332;">{{ clientes|length }}</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:2px;">cadastrados</div>
+    </div>
+    <div style="background:#fff;border:0.5px solid #e5e7eb;border-radius:10px;padding:14px;">
+        <div style="font-size:12px;color:#888;margin-bottom:4px;">Aprovados</div>
+        <div style="font-size:26px;font-weight:500;color:#22c55e;">{{ clientes|selectattr(3|string, 'equalto', 'Aprovado')|list|length }}</div>
+        <div style="font-size:11px;color:#22c55e;margin-top:2px;">crédito liberado</div>
+    </div>
+    <div style="background:#fff;border:0.5px solid #e5e7eb;border-radius:10px;padding:14px;">
+        <div style="font-size:12px;color:#888;margin-bottom:4px;">Pendentes</div>
+        <div style="font-size:26px;font-weight:500;color:#f59e0b;">{{ clientes|selectattr(3|string, 'equalto', 'Pendente')|list|length }}</div>
+        <div style="font-size:11px;color:#f59e0b;margin-top:2px;">aguardando análise</div>
+    </div>
+</div>
+
+<div class="card-ecil">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <span style="font-size:15px;font-weight:600;color:#1a2332;">
+            <i class="bi bi-people-fill me-2"></i>Lista de Clientes
+        </span>
+        <a href="/cadastro" class="btn-novo">
+            <i class="bi bi-person-plus-fill"></i> Novo Cliente
+        </a>
+    </div>
+
+    <div style="margin-bottom:16px;display:flex;gap:10px;align-items:center;">
+        <div style="position:relative;flex:1;">
+            <i class="bi bi-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;"></i>
+            <input type="text" id="busca"
+                   placeholder="Buscar por nome, CPF/CNPJ ou situação..."
+                   onkeyup="filtrarClientes()"
+                   style="width:100%;padding:10px 12px 10px 36px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
+        </div>
+        <select id="filtroSituacao" onchange="filtrarClientes()"
+                style="padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;color:#374151;outline:none;background:#fff;">
+            <option value="">Todas as situações</option>
+            <option value="Aprovado">Aprovado</option>
+            <option value="Pendente">Pendente</option>
+            <option value="Recusado">Recusado</option>
+        </select>
+    </div>
+
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>CPF / CNPJ</th>
+                <th>Score</th>
+                <th>Situação</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="corpoTabela">
+            {% for cliente in clientes %}
+            <tr>
+                <td><strong>{{ cliente[1] }}</strong></td>
+                <td style="color:#64748b;">{{ formatar_documento(cliente[2]) }}</td>
+                <td>
+                    {% if cliente[4] %}
+                        <strong>{{ cliente[4] }}</strong>
+                    {% else %}
+                        <span style="color:#94a3b8;">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if cliente[3] == 'Aprovado' %}
+                        <span class="badge-aprovado">Aprovado</span>
+                    {% elif cliente[3] == 'Recusado' %}
+                        <span class="badge-recusado">Recusado</span>
+                    {% else %}
+                        <span class="badge-pendente">Pendente</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div style="display:flex;gap:4px;align-items:center;white-space:nowrap;">
+                        <a href="/situacao/{{ cliente[0] }}/Aprovado"
+                           style="background:#15803d;color:#fff;padding:5px 11px;font-size:12px;border-radius:5px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;"
+                           onclick="return confirm('Aprovar {{ cliente[1] }}?')">✅ Aprovar</a>
+                        <a href="/situacao/{{ cliente[0] }}/Recusado"
+                           style="background:#b91c1c;color:#fff;padding:5px 11px;font-size:12px;border-radius:5px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;"
+                           onclick="return confirm('Recusar {{ cliente[1] }}?')">❌ Recusar</a>
+                        <a href="/situacao/{{ cliente[0] }}/Pendente"
+                           style="background:#c2410c;color:#fff;padding:5px 11px;font-size:12px;border-radius:5px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;"
+                           onclick="return confirm('Deixar pendente?')">⏳ Pendente</a>
+                        <a href="/editar_cliente/{{ cliente[0] }}"
+                           style="background:#4f9cf9;color:#fff;padding:5px 11px;border-radius:5px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+                            <i class="bi bi-pencil-fill"></i> Editar</a>
+                        <a href="/excluir_cliente/{{ cliente[0] }}"
+                           style="background:#4f9cf9;color:#fff;padding:5px 11px;border-radius:5px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;"
+                           onclick="return confirm('Tem certeza?')">
+                            <i class="bi bi-trash-fill"></i> Excluir</a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div id="contadorResultados" style="font-size:13px;color:#94a3b8;margin-top:8px;"></div>
+</div>
+
+<script>
+function filtrarClientes() {
+    var busca    = document.getElementById('busca').value.toLowerCase();
+    var situacao = document.getElementById('filtroSituacao').value.toLowerCase();
+    var linhas   = document.querySelectorAll('#corpoTabela tr');
+    var visiveis = 0;
+    linhas.forEach(function(linha) {
+        var texto   = linha.textContent.toLowerCase();
+        var bateBusca = texto.indexOf(busca) >= 0;
+        var bateSit   = situacao === '' || texto.indexOf(situacao) >= 0;
+        if (bateBusca && bateSit) { linha.style.display = ''; visiveis++; }
+        else { linha.style.display = 'none'; }
+    });
+    var c = document.getElementById('contadorResultados');
+    if (busca || situacao) { c.textContent = visiveis + ' cliente(s) encontrado(s)'; }
+    else { c.textContent = ''; }
+}
+</script>
+{% endblock %}

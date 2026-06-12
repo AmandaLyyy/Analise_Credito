@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36310.24 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Análise de crédito", "Análise de crédito\Análise de crédito.pyproj", "{DF56583E-92BE-4E19-AC22-D6343D900825}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DF56583E-92BE-4E19-AC22-D6343D900825}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF56583E-92BE-4E19-AC22-D6343D900825}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {857D3F60-7F6A-4040-8E62-5FA4091EBF0F}
+	EndGlobalSection
+EndGlobal

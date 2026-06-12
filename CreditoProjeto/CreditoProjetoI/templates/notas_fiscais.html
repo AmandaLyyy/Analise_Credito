@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block titulo %}Notas Fiscais — {{ nome_fornecedor }}{% endblock %}
+{% block conteudo %}
+
+<div class="d-flex align-items-center gap-3 mb-3">
+    <a href="/fornecedores" class="btn-cancelar" style="width:auto;padding:6px 14px;">
+        <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+    <span style="font-size:15px;font-weight:600;color:#1a2332;">
+        <i class="bi bi-file-earmark-text me-2"></i>
+        NFs de <strong>{{ nome_fornecedor }}</strong>
+        <span style="font-size:13px;color:#64748b;font-weight:400;">— {{ nome_cliente }}</span>
+    </span>
+</div>
+
+{% if mensagem %}
+<div class="alert alert-success mb-3">{{ mensagem }}</div>
+{% endif %}
+
+<div class="row g-3">
+
+    <!-- Formulário de cadastro -->
+    <div class="col-md-4">
+        <div class="card-ecil">
+            <div style="font-size:14px;font-weight:600;color:#1a2332;margin-bottom:16px;">
+                <i class="bi bi-plus-circle-fill me-2"></i>Nova Nota Fiscal
+            </div>
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Número da NF *</label>
+                    <input type="text" name="numero_nf" class="form-control"
+                           required placeholder="Ex: 001234">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Data de Emissão *</label>
+                    <input type="date" name="data_emissao" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Valor da NF (R$) *</label>
+                    <input type="number" name="valor_nf" class="form-control"
+                           required step="0.01" placeholder="Ex: 15000.00">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Data de Vencimento *</label>
+                    <input type="date" name="data_vencimento" class="form-control" required>
+                </div>
+                <button type="submit" class="btn-salvar">
+                    <i class="bi bi-check-circle-fill"></i> Cadastrar NF
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de NFs -->
+    <div class="col-md-8">
+        <div class="card-ecil">
+            <div style="font-size:14px;font-weight:600;color:#1a2332;margin-bottom:16px;">
+                <i class="bi bi-list-ul me-2"></i>Notas Fiscais Cadastradas
+            </div>
+            {% if notas %}
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nº NF</th>
+                        <th>Emissão</th>
+                        <th>Valor</th>
+                        <th>Vencimento</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for nf in notas %}
+                    <tr>
+                        <td><strong>{{ nf[1] }}</strong></td>
+                        <td style="color:#64748b;">
+                            {{ nf[2].strftime('%d/%m/%Y') if nf[2] else '—' }}
+                        </td>
+                        <td>{{ formatar_moeda(nf[3]) }}</td>
+                        <td>
+                            {% set hoje = now.date() %}
+                            {% if nf[4] and nf[4] < hoje %}
+                                <span style="color:#dc2626;font-weight:600;">
+                                    <i class="bi bi-exclamation-circle-fill"></i>
+                                    {{ nf[4].strftime('%d/%m/%Y') }} — Vencida
+                                </span>
+                            {% elif nf[4] %}
+                                <span style="color:#16a34a;">
+                                    {{ nf[4].strftime('%d/%m/%Y') }}
+                                </span>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td>
+                            <a href="/excluir_nf/{{ nf[0] }}/{{ fornecedor_id }}"
+                               class="btn-excluir"
+                               onclick="return confirm('Excluir esta NF?')">
+                                <i class="bi bi-trash-fill"></i> Excluir
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr style="background:#f8fafc;">
+                        <td colspan="2" style="font-weight:600;padding:10px 12px;">Total</td>
+                        <td style="font-weight:600;color:#1a2332;padding:10px 12px;">
+                            {{ formatar_moeda(notas | sum(attribute=3)) }}
+                        </td>
+                        <td colspan="2"></td>
+                    </tr>
+                </tfoot>
+            </table>
+            {% else %}
+            <div style="text-align:center;padding:30px;color:#94a3b8;">
+                <i class="bi bi-file-earmark-x" style="font-size:40px;"></i>
+                <p style="margin-top:10px;">Nenhuma NF cadastrada ainda.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

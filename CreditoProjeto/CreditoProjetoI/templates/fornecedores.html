@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% block titulo %}Fornecedores{% endblock %}
+{% block conteudo %}
+<div class="card-ecil">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <span style="font-size:15px;font-weight:600;color:#1a2332;">
+            <i class="bi bi-building me-2"></i>Fornecedores Cadastrados
+        </span>
+    <div style="display:flex;gap:8px;">
+            <a href="/relatorio/fornecedores/pdf" class="btn-novo"
+               style="background:#dc2626;">
+                <i class="bi bi-file-earmark-pdf-fill"></i> PDF
+            </a>
+            <a href="/relatorio/fornecedores/excel" class="btn-novo"
+               style="background:#16a34a;">
+                <i class="bi bi-file-earmark-excel-fill"></i> Excel
+            </a>
+            <a href="/cadastro_fornecedor" class="btn-novo">
+                <i class="bi bi-plus-circle-fill"></i> Novo Fornecedor
+            </a>
+        </div>
+    </div>
+
+    <!-- Barra de busca -->
+    <div style="margin-bottom:16px;display:flex;gap:10px;align-items:center;">
+        <div style="position:relative;flex:1;">
+            <i class="bi bi-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;"></i>
+            <input type="text" id="busca"
+                   placeholder="Buscar por cliente, fornecedor, email ou telefone..."
+                   onkeyup="filtrarFornecedores()"
+                   style="width:100%;padding:10px 12px 10px 36px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
+        </div>
+        <select id="filtroReferencia" onchange="filtrarFornecedores()"
+                style="padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;color:#374151;outline:none;background:#fff;">
+            <option value="">Todas as referências</option>
+            <option value="sim">Dá referência</option>
+            <option value="não">Não dá referência</option>
+        </select>
+    </div>
+
+    <table class="table table-hover" id="tabelaFornecedores">
+        <thead>
+            <tr>
+                <th>Cliente</th>
+                <th>Fornecedor</th>
+                <th>Email</th>
+                <th>Telefone</th>
+                <th>Referência</th>
+                <th>Limite</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="corpoTabela">
+            {% for f in fornecedores %}
+            <tr>
+                <td><strong>{{ f[0] }}</strong></td>
+                <td>{{ f[2] }}</td>
+                <td style="color:#64748b;">{{ f[3] }}</td>
+                <td style="color:#64748b;">{{ f[4] }}</td>
+                <td>
+                    {% if f[6] == 'Sim' %}
+                        <span class="badge-aprovado">Sim</span>
+                    {% else %}
+                        <span class="badge-recusado">Não</span>
+                    {% endif %}
+                </td>
+                <td>{{ formatar_moeda(f[7]) }}</td>
+                <td>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                        <a href="/notas_fiscais/{{ f[9] }}" class="btn-novo"
+                           style="padding:5px 11px;font-size:12px;">
+                            <i class="bi bi-file-earmark-text"></i> NFs
+                        </a>
+                        <a href="/editar_fornecedor/{{ f[9] }}"
+                           style="background:#ffc107;color:#000;padding:5px 11px;border-radius:5px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+                            <i class="bi bi-pencil-fill"></i> Editar
+                        </a>
+                        <a href="/excluir_fornecedor/{{ f[9] }}"
+                           style="background:#ef4444;color:#fff;padding:5px 11px;border-radius:5px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;"
+                           onclick="return confirm('Tem certeza?')">
+                            <i class="bi bi-trash-fill"></i> Excluir
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div id="contadorResultados" style="font-size:13px;color:#94a3b8;margin-top:8px;"></div>
+</div>
+
+<script>
+function filtrarFornecedores() {
+    const busca      = document.getElementById('busca').value.toLowerCase();
+    const referencia = document.getElementById('filtroReferencia').value.toLowerCase();
+    const linhas     = document.querySelectorAll('#corpoTabela tr');
+    let visiveis     = 0;
+
+    linhas.forEach(linha => {
+        const texto        = linha.textContent.toLowerCase();
+        const bateBusca    = texto.includes(busca);
+        const bateRef      = referencia === '' || texto.includes(referencia);
+
+        if (bateBusca && bateRef) {
+            linha.style.display = '';
+            visiveis++;
+        } else {
+            linha.style.display = 'none';
+        }
+    });
+
+    const contador = document.getElementById('contadorResultados');
+    if (busca || referencia) {
+        contador.textContent = `${visiveis} fornecedor(es) encontrado(s)`;
+    } else {
+        contador.textContent = '';
+    }
+}
+</script>
+
+{% endblock %}
