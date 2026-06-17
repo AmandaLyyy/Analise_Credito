@@ -1,12 +1,9 @@
-from dotenv import load_dotenv
-load_dotenv(override=False)
 from flask import Flask, render_template, request, redirect, url_for, session
 from datetime import timedelta, datetime
 import mysql.connector
-import os
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'troque-esta-chave-antes-de-usar')
+app.secret_key = 'ecil_chave_secreta_2024'
 app.permanent_session_lifetime = timedelta(minutes=30)
 
 def formatar_moeda(valor):
@@ -27,22 +24,18 @@ def formatar_documento(doc):
 app.jinja_env.globals['formatar_moeda']     = formatar_moeda
 app.jinja_env.globals['formatar_documento'] = formatar_documento
 
-# ─────────────────────────────────────────────────────────────
-# USUÁRIOS: defina via variáveis de ambiente ou arquivo .env
-# Exemplo no terminal:  export USUARIO_ADMIN=admin
-#                       export SENHA_ADMIN=suasenha
-# ─────────────────────────────────────────────────────────────
 USUARIOS = {
-    'Admin': 'ecil2026'
+    'Admin':  'ecil2026',
+    'Amanda': 'senha123',
+    'Angelo': '12345'
 }
 
 def conectar():
     return mysql.connector.connect(
-        host=os.environ.get('DB_HOST', 'localhost'),
-        port=int(os.environ.get('DB_PORT', 3306)),
-        database=os.environ.get('DB_NAME', 'analisecredito_db'),
-        user=os.environ.get('DB_USER', 'root'),
-        password=os.environ.get('DB_PASSWORD', '')   # <-- nunca coloque senha aqui!
+        host='localhost',
+        database='ecil_creditoprojetodb',
+        user='root',
+        password='Youandnever5'
     )
 
 def login_necessario():
@@ -88,15 +81,18 @@ def index():
     """)
     clientes = cursor.fetchall()
 
+    # Dados para os gráficos
     aprovados  = sum(1 for c in clientes if c[3] == 'Aprovado')
     pendentes  = sum(1 for c in clientes if c[3] == 'Pendente')
     recusados  = sum(1 for c in clientes if c[3] == 'Recusado')
 
+    # Distribuição por score
     score_excelente = sum(1 for c in clientes if c[4] and int(c[4]) >= 851)
     score_bom       = sum(1 for c in clientes if c[4] and 701 <= int(c[4]) <= 850)
     score_regular   = sum(1 for c in clientes if c[4] and 501 <= int(c[4]) <= 700)
     score_baixo     = sum(1 for c in clientes if c[4] and int(c[4]) <= 500)
 
+    # Total fornecedores
     cursor.execute("SELECT COUNT(*) FROM Fornecedores")
     total_fornecedores = cursor.fetchone()[0]
 
@@ -452,14 +448,16 @@ def relatorio_pdf():
     styles = getSampleStyleSheet()
     elementos = []
 
+    # Título
     titulo_style = ParagraphStyle('titulo', fontSize=16, fontName='Helvetica-Bold',
                                   textColor=colors.HexColor('#1a2332'), spaceAfter=6)
     sub_style    = ParagraphStyle('sub', fontSize=10, fontName='Helvetica',
                                   textColor=colors.grey, spaceAfter=20)
 
-    elementos.append(Paragraph('Sistema de Análise de Crédito', titulo_style))
+    elementos.append(Paragraph('ECIL — Sistema de Análise de Crédito', titulo_style))
     elementos.append(Paragraph(f'Relatório de Clientes — gerado em {datetime.now().strftime("%d/%m/%Y %H:%M")}', sub_style))
 
+    # Cabeçalho da tabela
     cabecalho = ['Cliente', 'CPF/CNPJ', 'Score', 'Situação', 'Limite', 'Taxa', 'Histórico', 'Setor']
     linhas    = [cabecalho]
 
@@ -527,6 +525,7 @@ def relatorio_excel():
     ws = wb.active
     ws.title = 'Análise de Clientes'
 
+    # Estilo cabeçalho
     header_fill = PatternFill('solid', fgColor='1a2332')
     header_font = Font(bold=True, color='FFFFFF', size=11)
     border      = Border(
@@ -536,8 +535,9 @@ def relatorio_excel():
         bottom=Side(style='thin', color='e5e7eb')
     )
 
+    # Título
     ws.merge_cells('A1:K1')
-    ws['A1'] = 'Sistema de Análise de Crédito — Relatório de Clientes'
+    ws['A1'] = 'ECIL — Relatório de Análise de Clientes'
     ws['A1'].font      = Font(bold=True, size=14, color='1a2332')
     ws['A1'].alignment = Alignment(horizontal='center')
 
@@ -546,6 +546,7 @@ def relatorio_excel():
     ws['A2'].font      = Font(size=10, color='888888')
     ws['A2'].alignment = Alignment(horizontal='center')
 
+    # Cabeçalhos
     cabecalhos = ['Nome', 'CPF/CNPJ', 'Situação', 'Histórico Pgto',
                   'Dívidas', 'Setor', 'Observação Serasa',
                   'Score', 'Limite', 'Taxa', 'Data Análise']
@@ -556,6 +557,7 @@ def relatorio_excel():
         cell.alignment   = Alignment(horizontal='center')
         cell.border      = border
 
+    # Dados
     alt_fill = PatternFill('solid', fgColor='f4f6fb')
     for row_idx, d in enumerate(dados, 5):
         fill = alt_fill if row_idx % 2 == 0 else PatternFill('solid', fgColor='FFFFFF')
@@ -578,6 +580,7 @@ def relatorio_excel():
             cell.border    = border
             cell.alignment = Alignment(horizontal='center')
 
+    # Largura das colunas
     larguras = [35, 22, 12, 16, 14, 18, 30, 8, 16, 12, 20]
     for col, larg in enumerate(larguras, 1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = larg
@@ -610,6 +613,7 @@ def relatorio_fornecedores_pdf():
     """)
     fornecedores = cursor.fetchall()
 
+    # Buscar NFs de cada fornecedor
     nfs_por_fornecedor = {}
     cursor.execute("""
         SELECT FornecedorID, NumeroNF, DataEmissao, ValorNF, DataVencimento
@@ -639,11 +643,12 @@ def relatorio_fornecedores_pdf():
     forn_style   = ParagraphStyle('forn', fontSize=10, fontName='Helvetica-Bold',
                                   textColor=colors.HexColor('#1a2332'), spaceAfter=4)
 
-    elementos.append(Paragraph('Sistema de Análise de Crédito — Relatório de Fornecedores', titulo_style))
+    elementos.append(Paragraph('ECIL — Relatório de Fornecedores', titulo_style))
     elementos.append(Paragraph(f'Gerado em {datetime.now().strftime("%d/%m/%Y %H:%M")}', sub_style))
 
     cliente_atual = None
     for f in fornecedores:
+        # Separador por cliente
         if f[0] != cliente_atual:
             cliente_atual = f[0]
             elementos.append(Spacer(1, 10))
@@ -661,6 +666,7 @@ def relatorio_fornecedores_pdf():
             elementos.append(cabecalho_cliente)
             elementos.append(Spacer(1, 6))
 
+        # Dados do fornecedor
         elementos.append(Paragraph(f'🏭 {f[2]}', forn_style))
         dados_forn = [
             ['Email', f[3] or '—', 'Telefone', f[4] or '—'],
@@ -687,6 +693,7 @@ def relatorio_fornecedores_pdf():
         ]))
         elementos.append(tabela_forn)
 
+        # NFs do fornecedor
         fid  = f[13]
         nfs  = nfs_por_fornecedor.get(fid, [])
         if nfs:
@@ -764,6 +771,7 @@ def relatorio_fornecedores_excel():
 
     wb = openpyxl.Workbook()
 
+    # ── Aba Fornecedores ────────────────────────────────────
     ws = wb.active
     ws.title = 'Fornecedores'
 
@@ -778,7 +786,7 @@ def relatorio_fornecedores_excel():
     )
 
     ws.merge_cells('A1:M1')
-    ws['A1'] = 'Sistema de Análise de Crédito — Relatório de Fornecedores'
+    ws['A1'] = 'ECIL — Relatório de Fornecedores'
     ws['A1'].font      = Font(bold=True, size=14, color='1a2332')
     ws['A1'].alignment = Alignment(horizontal='center')
 
@@ -819,10 +827,11 @@ def relatorio_fornecedores_excel():
     for col, larg in enumerate(larguras, 1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = larg
 
+    # ── Aba Notas Fiscais ───────────────────────────────────
     ws2 = wb.create_sheet('Notas Fiscais')
 
     ws2.merge_cells('A1:F1')
-    ws2['A1'] = 'Sistema de Análise de Crédito — Notas Fiscais por Fornecedor'
+    ws2['A1'] = 'ECIL — Notas Fiscais por Fornecedor'
     ws2['A1'].font      = Font(bold=True, size=14, color='1a2332')
     ws2['A1'].alignment = Alignment(horizontal='center')
 
@@ -911,4 +920,5 @@ def dashboard():
         total_fornecedores=total_fornecedores)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)
+    
