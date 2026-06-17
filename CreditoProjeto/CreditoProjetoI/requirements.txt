@@ -1,5 +1,6 @@
 flask
 mysql-connector-python
+python-dotenv
 reportlab
 openpyxl
 gunicorn
