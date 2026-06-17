@@ -692,7 +692,7 @@ def relatorio_fornecedores_pdf():
         nfs  = nfs_por_fornecedor.get(fid, [])
         if nfs:
             elementos.append(Spacer(1, 4))
-            nf_cab = [['Nº NF', 'Emissão', 'Valor', 'Vencimento']]
+            nf_cab = [['Chave de Acesso', 'Emissão', 'Valor', 'Vencimento']]
             hoje   = datetime.now().date()
             for nf in nfs:
                 venc   = nf[4]
@@ -705,7 +705,7 @@ def relatorio_fornecedores_pdf():
                     formatar_moeda(nf[3]),
                     venc_str
                 ])
-            tabela_nf = Table(nf_cab, colWidths=[3*cm, 3.5*cm, 4*cm, 7.5*cm])
+            tabela_nf = Table(nf_cab, colWidths=[7*cm, 2.5*cm, 3*cm, 2.5*cm])
             tabela_nf.setStyle(TableStyle([
                 ('BACKGROUND',  (0,0), (-1,0), colors.HexColor('#4f9cf9')),
                 ('TEXTCOLOR',   (0,0), (-1,0), colors.white),
