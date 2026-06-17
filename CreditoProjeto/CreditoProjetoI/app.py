@@ -136,16 +136,17 @@ def cadastro():
         if score_raw and int(score_raw) > 0:
             score = int(score_raw)
             if score >= 851:
-                decisao, taxa = 'Aprovado', 1.50
+                taxa = 1.50
             elif score >= 701:
-                decisao, taxa = 'Aprovado', 3.00
+                taxa = 3.00
             elif score >= 501:
-                decisao, taxa = 'Aprovado', 5.00
+                taxa = 5.00
             elif score >= 301:
-                decisao, taxa = 'Pendente', 8.00
+                taxa = 8.00
             else:
-                decisao, taxa = 'Negado', 12.00
+                taxa = 12.00
 
+            decisao = 'Pendente'
             limite = limpar_valor(request.form.get('limite', 0))
             cursor.execute("""
                 INSERT INTO AnalisesCredito
@@ -154,7 +155,7 @@ def cadastro():
             """, (cliente_id, score, decisao, limite, taxa))
             cursor.execute("""
                 UPDATE Clientes SET Situacao=%s WHERE ClienteID=%s
-            """, ('Recusado' if decisao == 'Negado' else decisao, cliente_id))
+            """, ('Pendente', cliente_id))
         conn.commit()
         conn.close()
         mensagem = f'✅ Cliente "{nome}" cadastrado com sucesso!'

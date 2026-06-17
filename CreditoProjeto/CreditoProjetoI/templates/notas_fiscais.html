@@ -27,9 +27,9 @@
             </div>
             <form method="POST">
                 <div class="mb-3">
-                    <label class="form-label">Número da NF *</label>
+                    <label class="form-label">Chave de Acesso *</label>
                     <input type="text" name="numero_nf" class="form-control"
-                           required placeholder="Ex: 001234">
+                           required placeholder="Ex: 17260610198974000185550010001250901572417671" maxlength="44" minlength="44" oninput="this.value=this.value.replace(/\D/g,'')">
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Data de Emissão *</label>
@@ -61,7 +61,7 @@
             <table class="table table-hover">
                 <thead>
                     <tr>
-                        <th>Nº NF</th>
+                        <th>Chave de Acesso</th>
                         <th>Emissão</th>
                         <th>Valor</th>
                         <th>Vencimento</th>
