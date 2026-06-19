@@ -1284,6 +1284,51 @@ def relatorio_fornecedores_excel_cliente(cpf):
 
 @app.route('/dashboard')
 def dashboard():
+    
+@app.route('/dashboard/cliente')
+def dashboard_cliente():
+    if login_necessario():
+        return redirect(url_for('login'))
+    cpf = request.args.get('cpf', '')
+    if not cpf:
+        return redirect(url_for('dashboard'))
+    conn   = conectar()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT ClienteID, Nome, CPF, Situacao, SerasaObservacao
+        FROM Clientes WHERE CPF = %s OR REPLACE(REPLACE(REPLACE(CPF, '.', ''), '/', ''), '-', '') = REPLACE(REPLACE(REPLACE(%s, '.', ''), '/', ''), '-', '')
+    """, (cpf, cpf))
+    cliente = cursor.fetchone()
+    cursor.execute("""
+        SELECT AC.PontuacaoCredito, AC.LimiteSugerido, AC.TaxaJuros
+        FROM AnalisesCredito AC
+        INNER JOIN Clientes C ON AC.ClienteID = C.ClienteID
+        WHERE C.CPF = %s OR REPLACE(REPLACE(REPLACE(C.CPF, '.', ''), '/', ''), '-', '') = REPLACE(REPLACE(REPLACE(%s, '.', ''), '/', ''), '-', '')
+        ORDER BY AC.DataAnalise DESC LIMIT 1
+    """, (cpf, cpf))
+    analise = cursor.fetchone()
+    cursor.execute("""
+        SELECT F.FornecedorID, F.NomeFornecedor, F.Email, F.Telefone,
+               F.ForneceReferencia, F.LimiteCredito, F.UltimaCompraData
+        FROM Fornecedores F
+        INNER JOIN Clientes C ON F.ClienteID = C.ClienteID
+        WHERE C.CPF = %s OR REPLACE(REPLACE(REPLACE(C.CPF, '.', ''), '/', ''), '-', '') = REPLACE(REPLACE(REPLACE(%s, '.', ''), '/', ''), '-', '')
+        ORDER BY F.NomeFornecedor
+    """, (cpf, cpf))
+    fornecedores = cursor.fetchall()
+    cursor.execute("""
+        SELECT C.Nome, C.CPF
+        FROM Clientes C ORDER BY C.Nome
+    """)
+    todos_clientes = cursor.fetchall()
+    conn.close()
+    return render_template('dashboard.html',
+        cliente=cliente,
+        analise=analise,
+        fornecedores_cliente=fornecedores,
+        todos_clientes=todos_clientes,
+        clientes_total=None)
+    
     if login_necessario():
         return redirect(url_for('login'))
     conn   = conectar()
@@ -1308,6 +1353,11 @@ def dashboard():
 
     cursor.execute("SELECT COUNT(*) FROM Fornecedores")
     total_fornecedores = cursor.fetchone()[0]
+    cursor.execute("""
+        SELECT C.Nome, C.CPF
+        FROM Clientes C ORDER BY C.Nome
+    """)
+    todos_clientes = cursor.fetchall()
     conn.close()
 
     return render_template('dashboard.html',
@@ -1320,7 +1370,11 @@ def dashboard():
         score_bom=score_bom,
         score_regular=score_regular,
         score_baixo=score_baixo,
-        total_fornecedores=total_fornecedores)
+        total_fornecedores=total_fornecedores,
+        todos_clientes=todos_clientes,
+        cliente=None,
+        analise=None,
+        fornecedores_cliente=None)
 
 if __name__ == '__main__':
     app.run(debug=True)
