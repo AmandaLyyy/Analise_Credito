@@ -102,4 +102,99 @@ barras.forEach(function(b) {
         + '</div></div></div>';
 });
 </script>
+<div style="margin-top:16px;background:#fff;border:0.5px solid #e5e7eb;border-radius:10px;padding:16px;">
+    <div style="font-size:14px;font-weight:500;color:#1a2332;margin-bottom:12px;">
+        <i class="bi bi-search me-2"></i>Consultar Cliente e Fornecedores
+    </div>
+    <form method="GET" action="/dashboard/cliente"
+          style="display:flex;gap:10px;align-items:center;margin-bottom:14px;">
+        <select name="cpf"
+                style="flex:1;padding:9px 12px;border:1px solid #e5e7eb;border-radius:7px;font-size:13px;color:#374151;background:#fff;outline:none;">
+            <option value="">Selecionar cliente...</option>
+            {% for c in todos_clientes %}
+            <option value="{{ c[1] }}"
+                {% if cliente and cliente[2] == c[1] %}selected{% endif %}>
+                {{ c[0] }}
+            </option>
+            {% endfor %}
+        </select>
+        <button type="submit"
+                style="background:#4f9cf9;color:#fff;border:none;padding:9px 20px;border-radius:7px;font-size:13px;cursor:pointer;">
+            <i class="bi bi-search"></i> Buscar
+        </button>
+    </form>
+
+    {% if cliente %}
+    <div style="background:#f8fafc;border:0.5px solid #e5e7eb;border-radius:8px;padding:14px;margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <strong style="font-size:14px;color:#1a2332;">{{ cliente[1] }}</strong>
+            {% if cliente[3] == 'Aprovado' %}
+                <span class="badge-aprovado">Aprovado</span>
+            {% elif cliente[3] == 'Recusado' %}
+                <span class="badge-recusado">Recusado</span>
+            {% else %}
+                <span class="badge-pendente">Pendente</span>
+            {% endif %}
+        </div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:4px;">
+            CNPJ/CPF: {{ formatar_documento(cliente[2]) }}
+        </div>
+        {% if analise %}
+        <div style="display:flex;gap:16px;margin-top:8px;">
+            <div style="font-size:12px;color:#64748b;">
+                Score: <strong style="color:#1a2332;">{{ analise[0] }}</strong>
+            </div>
+            <div style="font-size:12px;color:#64748b;">
+                Limite: <strong style="color:#1a2332;">{{ formatar_moeda(analise[1]) }}</strong>
+            </div>
+            <div style="font-size:12px;color:#64748b;">
+                Taxa: <strong style="color:#1a2332;">{{ analise[2] }}% a.m.</strong>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if fornecedores_cliente %}
+    <div style="font-size:13px;font-weight:500;color:#1a2332;margin-bottom:8px;">
+        Fornecedores vinculados ({{ fornecedores_cliente|length }})
+    </div>
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Fornecedor</th>
+                <th>Email</th>
+                <th>Telefone</th>
+                <th>Referência</th>
+                <th>Limite</th>
+                <th>Última Compra</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for f in fornecedores_cliente %}
+            <tr>
+                <td><strong>{{ f[1] }}</strong></td>
+                <td style="color:#64748b;">{{ f[2] or '—' }}</td>
+                <td style="color:#64748b;">{{ f[3] or '—' }}</td>
+                <td>
+                    {% if f[4] == 'Sim' %}
+                        <span class="badge-aprovado">Sim</span>
+                    {% else %}
+                        <span class="badge-recusado">Não</span>
+                    {% endif %}
+                </td>
+                <td>{{ formatar_moeda(f[5]) }}</td>
+                <td style="color:#64748b;">
+                    {{ f[6].strftime('%d/%m/%Y') if f[6] else '—' }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="font-size:13px;color:#94a3b8;padding:10px 0;">
+        Nenhum fornecedor vinculado a este cliente.
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
 {% endblock %}

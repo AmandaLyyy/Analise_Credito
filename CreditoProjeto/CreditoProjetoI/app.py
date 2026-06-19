@@ -504,6 +504,158 @@ def relatorio_pdf():
     response.headers['Content-Disposition'] = 'attachment; filename=relatorio_clientes.pdf'
     return response
 
+@app.route('/relatorio/pdf/cliente/<cpf>')
+def relatorio_pdf_cliente(cpf):
+    if login_necessario():
+        return redirect(url_for('login'))
+    conn   = conectar()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT C.Nome, C.CPF, C.Situacao, C.HistoricoPagamento,
+               C.DividasAtuais, C.SetorAtuacao, C.SerasaObservacao,
+               AC.PontuacaoCredito, AC.LimiteSugerido, AC.TaxaJuros,
+               AC.DataAnalise
+        FROM Clientes C
+        LEFT JOIN AnalisesCredito AC ON AC.ClienteID = C.ClienteID
+        WHERE C.CPF = %s
+        ORDER BY C.Nome
+    """, (cpf,))
+    dados = cursor.fetchall()
+    conn.close()
+
+    buffer = io.BytesIO()
+    doc    = SimpleDocTemplate(buffer, pagesize=A4,
+                               rightMargin=1.5*cm, leftMargin=1.5*cm,
+                               topMargin=2*cm, bottomMargin=2*cm)
+    styles = getSampleStyleSheet()
+    elementos = []
+
+    titulo_style = ParagraphStyle('titulo', fontSize=16, fontName='Helvetica-Bold',
+                                  textColor=colors.HexColor('#1a2332'), spaceAfter=6)
+    sub_style    = ParagraphStyle('sub', fontSize=10, fontName='Helvetica',
+                                  textColor=colors.grey, spaceAfter=20)
+
+    nome_cliente = dados[0][0] if dados else cpf
+    elementos.append(Paragraph('Sistema de Análise de Crédito', titulo_style))
+    elementos.append(Paragraph(f'Relatório Individual — {nome_cliente} — gerado em {datetime.now().strftime("%d/%m/%Y %H:%M")}', sub_style))
+
+    cabecalho = ['Cliente', 'CPF/CNPJ', 'Score', 'Situação', 'Limite', 'Taxa', 'Histórico', 'Setor']
+    linhas    = [cabecalho]
+    for d in dados:
+        linhas.append([
+            Paragraph(str(d[0] or ''), styles['Normal']),
+            str(formatar_documento(d[1]) or ''),
+            str(d[7] or '—'),
+            str(d[2] or 'Pendente'),
+            str(formatar_moeda(d[8])),
+            f"{d[9]}% a.m." if d[9] else '—',
+            str(d[3] or ''),
+            str(d[5] or ''),
+        ])
+
+    tabela = Table(linhas, colWidths=[4.5*cm, 3.8*cm, 1.5*cm, 2.2*cm, 2.8*cm, 2*cm, 2*cm, 2*cm])
+    tabela.setStyle(TableStyle([
+        ('BACKGROUND',  (0,0), (-1,0), colors.HexColor('#1a2332')),
+        ('TEXTCOLOR',   (0,0), (-1,0), colors.white),
+        ('FONTNAME',    (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE',    (0,0), (-1,0), 9),
+        ('ALIGN',       (0,0), (-1,-1), 'CENTER'),
+        ('VALIGN',      (0,0), (-1,-1), 'MIDDLE'),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#f4f6fb')]),
+        ('FONTSIZE',    (0,1), (-1,-1), 8),
+        ('GRID',        (0,0), (-1,-1), 0.5, colors.HexColor('#e5e7eb')),
+        ('TOPPADDING',  (0,0), (-1,-1), 6),
+        ('BOTTOMPADDING',(0,0), (-1,-1), 6),
+    ]))
+    elementos.append(tabela)
+    doc.build(elementos)
+    buffer.seek(0)
+
+    response = make_response(buffer.read())
+    response.headers['Content-Type']        = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=analise_{cpf}.pdf'
+    return response
+
+@app.route('/relatorio/excel/cliente/<cpf>')
+def relatorio_excel_cliente(cpf):
+    if login_necessario():
+        return redirect(url_for('login'))
+    conn   = conectar()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT C.Nome, C.CPF, C.Situacao, C.HistoricoPagamento,
+               C.DividasAtuais, C.SetorAtuacao, C.SerasaObservacao,
+               AC.PontuacaoCredito, AC.LimiteSugerido, AC.TaxaJuros,
+               AC.DataAnalise
+        FROM Clientes C
+        LEFT JOIN AnalisesCredito AC ON AC.ClienteID = C.ClienteID
+        WHERE C.CPF = %s
+        ORDER BY C.Nome
+    """, (cpf,))
+    dados = cursor.fetchall()
+    conn.close()
+
+    nome_cliente = dados[0][0] if dados else cpf
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Análise Individual'
+
+    header_fill = PatternFill('solid', fgColor='1a2332')
+    header_font = Font(bold=True, color='FFFFFF', size=11)
+    border      = Border(
+        left=Side(style='thin', color='e5e7eb'),
+        right=Side(style='thin', color='e5e7eb'),
+        top=Side(style='thin', color='e5e7eb'),
+        bottom=Side(style='thin', color='e5e7eb')
+    )
+
+    ws.merge_cells('A1:K1')
+    ws['A1'] = f'Análise de Crédito — {nome_cliente}'
+    ws['A1'].font      = Font(bold=True, size=14, color='1a2332')
+    ws['A1'].alignment = Alignment(horizontal='center')
+
+    ws.merge_cells('A2:K2')
+    ws['A2'] = f'Gerado em {datetime.now().strftime("%d/%m/%Y %H:%M")}'
+    ws['A2'].font      = Font(size=10, color='888888')
+    ws['A2'].alignment = Alignment(horizontal='center')
+
+    cabecalhos = ['Nome', 'CPF/CNPJ', 'Situação', 'Histórico Pgto',
+                  'Dívidas', 'Setor', 'Observação Serasa',
+                  'Score', 'Limite', 'Taxa', 'Data Análise']
+    for col, cab in enumerate(cabecalhos, 1):
+        cell           = ws.cell(row=4, column=col, value=cab)
+        cell.fill      = header_fill
+        cell.font      = header_font
+        cell.alignment = Alignment(horizontal='center')
+        cell.border    = border
+
+    alt_fill = PatternFill('solid', fgColor='f4f6fb')
+    for row_idx, d in enumerate(dados, 5):
+        fill  = alt_fill if row_idx % 2 == 0 else PatternFill('solid', fgColor='FFFFFF')
+        linha = [
+            d[0] or '', formatar_documento(d[1]) or '', d[2] or 'Pendente',
+            d[3] or '', float(d[4] or 0), d[5] or '', d[6] or '',
+            d[7] or '', float(d[8] or 0),
+            f"{d[9]}% a.m." if d[9] else '—',
+            d[10].strftime('%d/%m/%Y %H:%M') if d[10] else '—',
+        ]
+        for col_idx, valor in enumerate(linha, 1):
+            cell           = ws.cell(row=row_idx, column=col_idx, value=valor)
+            cell.fill      = fill
+            cell.border    = border
+            cell.alignment = Alignment(horizontal='center')
+
+    larguras = [35, 22, 12, 16, 14, 18, 30, 8, 16, 12, 20]
+    for col, larg in enumerate(larguras, 1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = larg
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    response = make_response(buffer.read())
+    response.headers['Content-Type']        = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    response.headers['Content-Disposition'] = f'attachment; filename=analise_{cpf}.xlsx'
+    return response
 
 @app.route('/relatorio/excel')
 def relatorio_excel():
@@ -869,6 +1021,265 @@ def relatorio_fornecedores_excel():
     response = make_response(buffer.read())
     response.headers['Content-Type']        = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     response.headers['Content-Disposition'] = 'attachment; filename=relatorio_fornecedores.xlsx'
+    return response
+@app.route('/relatorio/fornecedores/pdf/cliente/<cpf>')
+def relatorio_fornecedores_pdf_cliente(cpf):
+    if login_necessario():
+        return redirect(url_for('login'))
+    conn   = conectar()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT C.Nome, C.CPF, F.NomeFornecedor, F.Email, F.Telefone,
+               F.NomeContato, F.ForneceReferencia, F.LimiteCredito,
+               F.PrimeiraCompraData, F.PrimeiraCompraValor,
+               F.UltimaCompraData, F.UltimaCompraValor,
+               F.DataCadastroFornecedor, F.FornecedorID
+        FROM Fornecedores F
+        INNER JOIN Clientes C ON F.ClienteID = C.ClienteID
+        WHERE C.CPF = %s
+        ORDER BY F.NomeFornecedor
+    """, (cpf,))
+    fornecedores = cursor.fetchall()
+
+    nfs_por_fornecedor = {}
+    if fornecedores:
+        cursor.execute("""
+            SELECT NF.FornecedorID, NF.NumeroNF, NF.DataEmissao, NF.ValorNF, NF.DataVencimento
+            FROM NotasFiscais NF
+            INNER JOIN Fornecedores F ON NF.FornecedorID = F.FornecedorID
+            INNER JOIN Clientes C ON F.ClienteID = C.ClienteID
+            WHERE C.CPF = %s
+            ORDER BY NF.FornecedorID, NF.DataVencimento DESC
+        """, (cpf,))
+        for nf in cursor.fetchall():
+            fid = nf[0]
+            if fid not in nfs_por_fornecedor:
+                nfs_por_fornecedor[fid] = []
+            nfs_por_fornecedor[fid].append(nf)
+    conn.close()
+
+    nome_cliente = fornecedores[0][0] if fornecedores else cpf
+    buffer  = io.BytesIO()
+    doc     = SimpleDocTemplate(buffer, pagesize=A4,
+                                rightMargin=1.5*cm, leftMargin=1.5*cm,
+                                topMargin=2*cm, bottomMargin=2*cm)
+    styles  = getSampleStyleSheet()
+    elementos = []
+
+    titulo_style  = ParagraphStyle('titulo', fontSize=16, fontName='Helvetica-Bold',
+                                   textColor=colors.HexColor('#1a2332'), spaceAfter=4)
+    sub_style     = ParagraphStyle('sub', fontSize=10, fontName='Helvetica',
+                                   textColor=colors.grey, spaceAfter=16)
+    cliente_style = ParagraphStyle('cliente', fontSize=12, fontName='Helvetica-Bold',
+                                   textColor=colors.white, spaceAfter=4)
+    forn_style    = ParagraphStyle('forn', fontSize=10, fontName='Helvetica-Bold',
+                                   textColor=colors.HexColor('#1a2332'), spaceAfter=4)
+
+    elementos.append(Paragraph(f'Fornecedores — {nome_cliente}', titulo_style))
+    elementos.append(Paragraph(f'Gerado em {datetime.now().strftime("%d/%m/%Y %H:%M")}', sub_style))
+
+    for f in fornecedores:
+        elementos.append(Paragraph(f'🏭 {f[2]}', forn_style))
+        dados_forn = [
+            ['Email', f[3] or '—', 'Telefone', f[4] or '—'],
+            ['Contato', f[5] or '—', 'Dá Referência', f[6] or '—'],
+            ['Limite de Crédito', formatar_moeda(f[7]), 'Cad. Fornecedor',
+             f[12].strftime('%d/%m/%Y') if f[12] else '—'],
+            ['Maior Compra',
+             f"{f[8].strftime('%d/%m/%Y') if f[8] else '—'} — {formatar_moeda(f[9])}",
+             'Última Compra',
+             f"{f[10].strftime('%d/%m/%Y') if f[10] else '—'} — {formatar_moeda(f[11])}"],
+        ]
+        tabela_forn = Table(dados_forn, colWidths=[3.5*cm, 5.5*cm, 3.5*cm, 5.5*cm])
+        tabela_forn.setStyle(TableStyle([
+            ('FONTSIZE',    (0,0), (-1,-1), 8),
+            ('FONTNAME',    (0,0), (0,-1), 'Helvetica-Bold'),
+            ('FONTNAME',    (2,0), (2,-1), 'Helvetica-Bold'),
+            ('TEXTCOLOR',   (0,0), (0,-1), colors.HexColor('#64748b')),
+            ('TEXTCOLOR',   (2,0), (2,-1), colors.HexColor('#64748b')),
+            ('BACKGROUND',  (0,0), (-1,-1), colors.HexColor('#f8fafc')),
+            ('GRID',        (0,0), (-1,-1), 0.5, colors.HexColor('#e5e7eb')),
+            ('TOPPADDING',  (0,0), (-1,-1), 5),
+            ('BOTTOMPADDING',(0,0), (-1,-1), 5),
+            ('LEFTPADDING', (0,0), (-1,-1), 8),
+        ]))
+        elementos.append(tabela_forn)
+
+        fid = f[13]
+        nfs = nfs_por_fornecedor.get(fid, [])
+        if nfs:
+            elementos.append(Spacer(1, 4))
+            nf_cab = [['Chave de Acesso', 'Emissão', 'Valor', 'Vencimento']]
+            hoje   = datetime.now().date()
+            for nf in nfs:
+                venc     = nf[4]
+                venc_str = venc.strftime('%d/%m/%Y') if venc else '—'
+                if venc and venc < hoje:
+                    venc_str += ' ⚠ Vencida'
+                nf_cab.append([str(nf[1]),
+                                nf[2].strftime('%d/%m/%Y') if nf[2] else '—',
+                                formatar_moeda(nf[3]), venc_str])
+            tabela_nf = Table(nf_cab, colWidths=[7*cm, 2.5*cm, 3*cm, 2.5*cm])
+            tabela_nf.setStyle(TableStyle([
+                ('BACKGROUND',  (0,0), (-1,0), colors.HexColor('#4f9cf9')),
+                ('TEXTCOLOR',   (0,0), (-1,0), colors.white),
+                ('FONTNAME',    (0,0), (-1,0), 'Helvetica-Bold'),
+                ('FONTSIZE',    (0,0), (-1,-1), 8),
+                ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor('#eff6ff')]),
+                ('GRID',        (0,0), (-1,-1), 0.5, colors.HexColor('#e5e7eb')),
+                ('TOPPADDING',  (0,0), (-1,-1), 4),
+                ('BOTTOMPADDING',(0,0), (-1,-1), 4),
+                ('ALIGN',       (0,0), (-1,-1), 'CENTER'),
+            ]))
+            elementos.append(tabela_nf)
+        else:
+            elementos.append(Paragraph('Nenhuma NF cadastrada.', ParagraphStyle('sem_nf', fontSize=8, textColor=colors.grey)))
+        elementos.append(Spacer(1, 12))
+
+    doc.build(elementos)
+    buffer.seek(0)
+    response = make_response(buffer.read())
+    response.headers['Content-Type']        = 'application/pdf'
+    response.headers['Content-Disposition'] = f'attachment; filename=fornecedores_{cpf}.pdf'
+    return response
+
+@app.route('/relatorio/fornecedores/excel/cliente/<cpf>')
+def relatorio_fornecedores_excel_cliente(cpf):
+    if login_necessario():
+        return redirect(url_for('login'))
+    conn   = conectar()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT C.Nome, C.CPF, F.NomeFornecedor, F.Email, F.Telefone,
+               F.NomeContato, F.ForneceReferencia, F.LimiteCredito,
+               F.PrimeiraCompraData, F.PrimeiraCompraValor,
+               F.UltimaCompraData, F.UltimaCompraValor,
+               F.DataCadastroFornecedor, F.FornecedorID
+        FROM Fornecedores F
+        INNER JOIN Clientes C ON F.ClienteID = C.ClienteID
+        WHERE C.CPF = %s
+        ORDER BY F.NomeFornecedor
+    """, (cpf,))
+    fornecedores = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT NF.FornecedorID, NF.NumeroNF, NF.DataEmissao, NF.ValorNF, NF.DataVencimento
+        FROM NotasFiscais NF
+        INNER JOIN Fornecedores F ON NF.FornecedorID = F.FornecedorID
+        INNER JOIN Clientes C ON F.ClienteID = C.ClienteID
+        WHERE C.CPF = %s
+        ORDER BY NF.FornecedorID, NF.DataVencimento DESC
+    """, (cpf,))
+    nfs_por_fornecedor = {}
+    for nf in cursor.fetchall():
+        fid = nf[0]
+        if fid not in nfs_por_fornecedor:
+            nfs_por_fornecedor[fid] = []
+        nfs_por_fornecedor[fid].append(nf)
+    conn.close()
+
+    nome_cliente = fornecedores[0][0] if fornecedores else cpf
+    wb = openpyxl.Workbook()
+
+    ws = wb.active
+    ws.title = 'Fornecedores'
+    header_fill = PatternFill('solid', fgColor='1a2332')
+    header_font = Font(bold=True, color='FFFFFF', size=11)
+    alt_fill    = PatternFill('solid', fgColor='f4f6fb')
+    border      = Border(
+        left=Side(style='thin', color='e5e7eb'),
+        right=Side(style='thin', color='e5e7eb'),
+        top=Side(style='thin', color='e5e7eb'),
+        bottom=Side(style='thin', color='e5e7eb')
+    )
+
+    ws.merge_cells('A1:M1')
+    ws['A1'] = f'Fornecedores — {nome_cliente}'
+    ws['A1'].font      = Font(bold=True, size=14, color='1a2332')
+    ws['A1'].alignment = Alignment(horizontal='center')
+
+    ws.merge_cells('A2:M2')
+    ws['A2'] = f'Gerado em {datetime.now().strftime("%d/%m/%Y %H:%M")}'
+    ws['A2'].font      = Font(size=10, color='888888')
+    ws['A2'].alignment = Alignment(horizontal='center')
+
+    cabs = ['Cliente', 'CPF/CNPJ', 'Fornecedor', 'Email', 'Telefone',
+            'Contato', 'Referência', 'Limite', 'Data Maior Compra',
+            'Valor Maior Compra', 'Data Última Compra', 'Valor Última Compra',
+            'Cad. Fornecedor']
+    for col, cab in enumerate(cabs, 1):
+        cell           = ws.cell(row=4, column=col, value=cab)
+        cell.fill      = header_fill
+        cell.font      = header_font
+        cell.alignment = Alignment(horizontal='center')
+        cell.border    = border
+
+    for row_idx, f in enumerate(fornecedores, 5):
+        fill  = alt_fill if row_idx % 2 == 0 else PatternFill('solid', fgColor='FFFFFF')
+        linha = [
+            f[0], formatar_documento(f[1]), f[2], f[3] or '', f[4] or '',
+            f[5] or '', f[6] or '', float(f[7] or 0),
+            f[8].strftime('%d/%m/%Y') if f[8] else '—', float(f[9] or 0),
+            f[10].strftime('%d/%m/%Y') if f[10] else '—', float(f[11] or 0),
+            f[12].strftime('%d/%m/%Y') if f[12] else '—',
+        ]
+        for col_idx, valor in enumerate(linha, 1):
+            cell           = ws.cell(row=row_idx, column=col_idx, value=valor)
+            cell.fill      = fill
+            cell.border    = border
+            cell.alignment = Alignment(horizontal='center')
+
+    for col, larg in enumerate([30,22,25,28,18,20,12,16,18,18,18,18,18], 1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = larg
+
+    ws2 = wb.create_sheet('Notas Fiscais')
+    ws2.merge_cells('A1:F1')
+    ws2['A1'] = f'Notas Fiscais — {nome_cliente}'
+    ws2['A1'].font      = Font(bold=True, size=14, color='1a2332')
+    ws2['A1'].alignment = Alignment(horizontal='center')
+
+    header_fill2 = PatternFill('solid', fgColor='4f9cf9')
+    cabs2 = ['Cliente', 'Fornecedor', 'Nº NF', 'Data Emissão', 'Valor', 'Vencimento']
+    for col, cab in enumerate(cabs2, 1):
+        cell           = ws2.cell(row=3, column=col, value=cab)
+        cell.fill      = header_fill2
+        cell.font      = Font(bold=True, color='FFFFFF', size=11)
+        cell.alignment = Alignment(horizontal='center')
+        cell.border    = border
+
+    row_idx = 4
+    hoje    = datetime.now().date()
+    for f in fornecedores:
+        fid = f[13]
+        nfs = nfs_por_fornecedor.get(fid, [])
+        for nf in nfs:
+            fill    = alt_fill if row_idx % 2 == 0 else PatternFill('solid', fgColor='FFFFFF')
+            venc    = nf[4]
+            vencida = ' ⚠ VENCIDA' if venc and venc < hoje else ''
+            linha   = [
+                f[0], f[2], str(nf[1]),
+                nf[2].strftime('%d/%m/%Y') if nf[2] else '—',
+                float(nf[3] or 0),
+                (venc.strftime('%d/%m/%Y') if venc else '—') + vencida
+            ]
+            for col_idx, valor in enumerate(linha, 1):
+                cell           = ws2.cell(row=row_idx, column=col_idx, value=valor)
+                cell.fill      = fill
+                cell.border    = border
+                cell.alignment = Alignment(horizontal='center')
+                if vencida and col_idx == 6:
+                    cell.font = Font(color='dc2626', bold=True)
+            row_idx += 1
+
+    for col, larg in enumerate([30,25,12,16,16,22], 1):
+        ws2.column_dimensions[openpyxl.utils.get_column_letter(col)].width = larg
+
+    buffer = io.BytesIO()
+    wb.save(buffer)
+    buffer.seek(0)
+    response = make_response(buffer.read())
+    response.headers['Content-Type']        = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    response.headers['Content-Disposition'] = f'attachment; filename=fornecedores_{cpf}.xlsx'
     return response
 
 @app.route('/dashboard')
