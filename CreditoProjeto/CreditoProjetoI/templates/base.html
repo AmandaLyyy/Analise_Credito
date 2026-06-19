@@ -148,6 +148,16 @@ html<!DOCTYPE html>
             margin-top: 8px;
         }
         .btn-cancelar:hover { background: #e2e8f0; color: #374151; }
+        /* ── RESPONSIVIDADE MOBILE ── */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .conteudo { margin-left: 0; padding: 16px; }
+            .topbar { flex-wrap: wrap; gap: 8px; }
+            .topbar h5 { font-size: 15px; }
+            .table thead th, .table tbody td { font-size: 11px; padding: 7px 6px; }
+            .metric-card .valor { font-size: 20px; }
+            .btn-novo, .btn-editar, .btn-excluir { font-size: 11px; padding: 4px 8px; }
+        }
     </style>
 </head>
 <body>
