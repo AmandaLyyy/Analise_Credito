@@ -69,5 +69,72 @@
             <i class="bi bi-x-circle"></i> Cancelar
         </a>
     </form>
+<!-- ===== FORNECEDORES POR CLIENTE ===== -->
+<div class="card mt-4">
+  <div class="card-body">
+    <h5 class="card-title mb-3">🔍 Fornecedores por Cliente</h5>
+    <form method="GET" action="{{ url_for('dashboard') }}" class="row g-2 align-items-end mb-3">
+      <div class="col-auto">
+        <label for="cliente_id" class="form-label">Selecione o cliente:</label>
+        <select name="cliente_id" id="cliente_id" class="form-select">
+          <option value="">-- Escolha um cliente --</option>
+          {% for c in lista_clientes %}
+            <option value="{{ c[0] }}" {% if cliente_selecionado_id == c[0] %}selected{% endif %}>
+              {{ c[1] }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Ver Fornecedores</button>
+      </div>
+      {% if cliente_selecionado_id %}
+      <div class="col-auto">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">Limpar</a>
+      </div>
+      {% endif %}
+    </form>
+
+    {% if cliente_selecionado_id %}
+      {% if fornecedores_do_cliente %}
+        <p class="text-muted mb-2">Fornecedores vinculados a <strong>{{ cliente_selecionado_nome }}</strong>:</p>
+        <div class="table-responsive">
+          <table class="table table-sm table-striped">
+            <thead class="table-dark">
+              <tr>
+                <th>Fornecedor</th>
+                <th>Contato</th>
+                <th>Telefone</th>
+                <th>E-mail</th>
+                <th>Referência</th>
+                <th>Limite</th>
+                <th>Última Compra</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for f in fornecedores_do_cliente %}
+              <tr>
+                <td>{{ f[0] }}</td>
+                <td>{{ f[3] or '—' }}</td>
+                <td>{{ f[2] or '—' }}</td>
+                <td>{{ f[1] or '—' }}</td>
+                <td>{{ f[4] or '—' }}</td>
+                <td>{{ formatar_moeda(f[5]) }}</td>
+                <td>{{ f[6].strftime('%d/%m/%Y') if f[6] else '—' }}</td>
+                <td>
+                  <a href="{{ url_for('notas_fiscais', fornecedor_id=f[7]) }}" class="btn btn-sm btn-outline-primary">NFs</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-warning mb-0">Nenhum fornecedor cadastrado para <strong>{{ cliente_selecionado_nome }}</strong>.</div>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>    
 </div>
 {% endblock %}
