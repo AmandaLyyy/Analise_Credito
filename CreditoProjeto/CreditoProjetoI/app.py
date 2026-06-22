@@ -242,8 +242,10 @@ def analise():
         ORDER BY AC.DataAnalise DESC
     """)
     analises = cursor.fetchall()
+    cursor.execute("SELECT ClienteID, Nome FROM Clientes ORDER BY Nome")
+    lista_clientes = cursor.fetchall()
     conn.close()
-    return render_template('analise.html', analises=analises)
+    return render_template('analise.html', analises=analises, lista_clientes=lista_clientes)
 
 # ─── FORNECEDORES ─────────────────────────────────────────────
 
@@ -262,8 +264,10 @@ def fornecedores():
         ORDER BY C.Nome, F.NomeFornecedor
     """)
     fornecedores = cursor.fetchall()
+    cursor.execute("SELECT ClienteID, Nome FROM Clientes ORDER BY Nome")
+    lista_clientes = cursor.fetchall()
     conn.close()
-    return render_template('fornecedores.html', fornecedores=fornecedores)
+    return render_template('fornecedores.html', fornecedores=fornecedores, lista_clientes=lista_clientes)
 
 @app.route('/cadastro_fornecedor', methods=['GET', 'POST'])
 def cadastro_fornecedor():

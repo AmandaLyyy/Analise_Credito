@@ -2,36 +2,38 @@
 {% block titulo %}Análise de Crédito{% endblock %}
 {% block conteudo %}
 <div class="card-ecil">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-3" style="flex-wrap:wrap;gap:10px;">
         <span style="font-size:15px;font-weight:600;color:#1a2332;">
             <i class="bi bi-graph-up-arrow me-2"></i>Histórico de Análises
         </span>
-         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <a href="/relatorio/pdf" class="btn-novo" style="background:#dc2626;">
-                <i class="bi bi-file-earmark-pdf-fill"></i> Exportar PDF
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+            <!-- Relatório geral -->
+            <a href="{{ url_for('relatorio_pdf') }}" class="btn-novo" style="background:#dc2626;">
+                <i class="bi bi-file-earmark-pdf-fill"></i> PDF Geral
             </a>
-            <a href="/relatorio/excel" class="btn-novo" style="background:#16a34a;">
-                <i class="bi bi-file-earmark-excel-fill"></i> Exportar Excel
+            <a href="{{ url_for('relatorio_excel') }}" class="btn-novo" style="background:#16a34a;">
+                <i class="bi bi-file-earmark-excel-fill"></i> Excel Geral
             </a>
-            <div style="width:1px;height:30px;background:#e5e7eb;margin:0 4px;"></div>
-            <span style="font-size:12px;color:#64748b;">Por cliente:</span>
-            <select id="selectClienteAnalise"
-                    style="padding:7px 12px;border:1px solid #e5e7eb;border-radius:7px;font-size:13px;color:#374151;background:#fff;outline:none;min-width:200px;">
-                <option value="">Selecionar cliente...</option>
-                {% for a in analises %}
-                <option value="{{ a[1] }}">{{ a[0] }}</option>
+            <!-- Divisor -->
+            <span style="color:#e5e7eb;font-size:20px;">|</span>
+            <!-- Filtro por cliente -->
+            <select id="clienteSelect" style="padding:7px 12px;border:1px solid #e5e7eb;border-radius:7px;font-size:13px;color:#374151;outline:none;background:#fff;">
+                <option value="">Por cliente...</option>
+                {% for c in lista_clientes %}
+                <option value="{{ c[0] }}">{{ c[1] }}</option>
                 {% endfor %}
             </select>
-            <a href="#" onclick="exportarClienteAnalise('pdf')" class="btn-novo" style="background:#b91c1c;">
-                <i class="bi bi-file-earmark-pdf-fill"></i> PDF do Cliente
-            </a>
-            <a href="#" onclick="exportarClienteAnalise('excel')" class="btn-novo" style="background:#15803d;">
-                <i class="bi bi-file-earmark-excel-fill"></i> Excel do Cliente
-            </a>
+            <button onclick="exportarPorCliente('pdf')"
+                    style="background:#dc2626;color:#fff;border:none;padding:7px 13px;border-radius:7px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
+                <i class="bi bi-file-earmark-pdf-fill"></i> PDF
+            </button>
+            <button onclick="exportarPorCliente('excel')"
+                    style="background:#16a34a;color:#fff;border:none;padding:7px 13px;border-radius:7px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;">
+                <i class="bi bi-file-earmark-excel-fill"></i> Excel
+            </button>
         </div>
     </div>
 
-    <!-- Barra de busca -->
     <div style="margin-bottom:16px;display:flex;gap:10px;align-items:center;">
         <div style="position:relative;flex:1;">
             <i class="bi bi-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;"></i>
@@ -83,42 +85,32 @@
             {% endfor %}
         </tbody>
     </table>
-
     <div id="contadorResultados" style="font-size:13px;color:#94a3b8;margin-top:8px;"></div>
 </div>
 
 <script>
+function exportarPorCliente(tipo) {
+    var id = document.getElementById('clienteSelect').value;
+    if (!id) { alert('Selecione um cliente primeiro.'); return; }
+    var url = tipo === 'pdf'
+        ? '{{ url_for("relatorio_pdf") }}?cliente_id=' + id
+        : '{{ url_for("relatorio_excel") }}?cliente_id=' + id;
+    window.location.href = url;
+}
+
 function filtrarAnalise() {
     const busca   = document.getElementById('busca').value.toLowerCase();
     const decisao = document.getElementById('filtroDecisao').value.toLowerCase();
     const linhas  = document.querySelectorAll('#corpoTabela tr');
     let visiveis  = 0;
-
     linhas.forEach(linha => {
-        const texto       = linha.textContent.toLowerCase();
-        const bateBusca   = texto.includes(busca);
-        const bateDecisao = decisao === '' || texto.includes(decisao);
-
-        if (bateBusca && bateDecisao) {
-            linha.style.display = '';
-            visiveis++;
-        } else {
-            linha.style.display = 'none';
-        }
+        const texto = linha.textContent.toLowerCase();
+        if (texto.includes(busca) && (decisao === '' || texto.includes(decisao))) {
+            linha.style.display = ''; visiveis++;
+        } else { linha.style.display = 'none'; }
     });
-
-    const contador = document.getElementById('contadorResultados');
-    if (busca || decisao) {
-        contador.textContent = `${visiveis} análise(s) encontrada(s)`;
-    } else {
-        contador.textContent = '';
-    }
-}
-function exportarClienteAnalise(tipo) {
-    var cpf = document.getElementById('selectClienteAnalise').value;
-    if (!cpf) { alert('Selecione um cliente primeiro!'); return false; }
-    window.location.href = '/relatorio/' + tipo + '/cliente/' + encodeURIComponent(cpf);
+    const c = document.getElementById('contadorResultados');
+    c.textContent = (busca || decisao) ? visiveis + ' análise(s) encontrada(s)' : '';
 }
 </script>
-
 {% endblock %}
