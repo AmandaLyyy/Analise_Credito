@@ -2,6 +2,7 @@
 {% block titulo %}Dashboard{% endblock %}
 {% block conteudo %}
 
+<!-- ── Cartões de resumo ── -->
 <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
     <div style="background:#fff;border:0.5px solid #e5e7eb;border-radius:10px;padding:14px;">
         <div style="font-size:12px;color:#888;margin-bottom:4px;">Total Clientes</div>
@@ -20,7 +21,8 @@
     </div>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+<!-- ── Gráficos ── -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;">
     <div style="background:#fff;border:0.5px solid #e5e7eb;border-radius:10px;padding:16px;">
         <div style="font-size:13px;font-weight:500;color:#1a2332;margin-bottom:12px;">Situação dos Clientes</div>
         <div style="display:flex;align-items:center;gap:20px;">
@@ -57,6 +59,117 @@
     </div>
 </div>
 
+<!-- ── Fornecedores por Cliente ── -->
+<div style="background:#fff;border:0.5px solid #e5e7eb;border-radius:10px;padding:20px;">
+    <div style="font-size:14px;font-weight:600;color:#1a2332;margin-bottom:14px;">
+        <i class="bi bi-search me-2"></i>Fornecedores por Cliente
+    </div>
+
+    <form method="GET" action="{{ url_for('dashboard') }}"
+          style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px;">
+        <div style="flex:1;min-width:200px;">
+            <label style="font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px;">
+                Selecione o cliente
+            </label>
+            <select name="cliente_id" class="form-select" style="font-size:13px;">
+                <option value="">— Escolha um cliente —</option>
+                {% for c in lista_clientes %}
+                <option value="{{ c[0] }}"
+                    {% if cliente_selecionado_id == c[0] %}selected{% endif %}>
+                    {{ c[1] }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div style="display:flex;gap:8px;">
+            <button type="submit"
+                    style="background:#4f9cf9;color:#fff;border:none;padding:9px 18px;border-radius:7px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                <i class="bi bi-search"></i> Buscar
+            </button>
+            {% if cliente_selecionado_id %}
+            <a href="{{ url_for('dashboard') }}"
+               style="background:#f1f5f9;color:#64748b;border:none;padding:9px 14px;border-radius:7px;font-size:13px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+                <i class="bi bi-x-circle"></i> Limpar
+            </a>
+            {% endif %}
+        </div>
+    </form>
+
+    {% if cliente_selecionado_id %}
+        {% if fornecedores_do_cliente %}
+        <div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <span style="font-size:13px;color:#64748b;">
+                <strong style="color:#1a2332;">{{ fornecedores_do_cliente|length }}</strong>
+                fornecedor(es) vinculado(s) a
+                <strong style="color:#4f9cf9;">{{ cliente_selecionado_nome }}</strong>
+            </span>
+            <div style="display:flex;gap:8px;">
+                <a href="{{ url_for('relatorio_fornecedores_pdf') }}?cliente_id={{ cliente_selecionado_id }}"
+                   style="background:#1a2332;color:#fff;padding:6px 14px;border-radius:6px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+                    <i class="bi bi-file-earmark-pdf-fill"></i> PDF
+                </a>
+                <a href="{{ url_for('relatorio_fornecedores_excel') }}?cliente_id={{ cliente_selecionado_id }}"
+                   style="background:#166534;color:#fff;padding:6px 14px;border-radius:6px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;">
+                    <i class="bi bi-file-earmark-excel-fill"></i> Excel
+                </a>
+            </div>
+        </div>
+        <div style="overflow-x:auto;">
+            <table class="table table-hover" style="margin-bottom:0;">
+                <thead>
+                    <tr>
+                        <th>Fornecedor</th>
+                        <th>Contato</th>
+                        <th>Telefone</th>
+                        <th>E-mail</th>
+                        <th>Referência</th>
+                        <th>Limite</th>
+                        <th>Última Compra</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for f in fornecedores_do_cliente %}
+                    <tr>
+                        <td><strong>{{ f[0] }}</strong></td>
+                        <td>{{ f[3] or '—' }}</td>
+                        <td>{{ f[2] or '—' }}</td>
+                        <td>{{ f[1] or '—' }}</td>
+                        <td>
+                            {% if f[4] == 'Sim' %}
+                                <span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:20px;font-size:11px;">Sim</span>
+                            {% else %}
+                                <span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:20px;font-size:11px;">Não</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ formatar_moeda(f[5]) }}</td>
+                        <td>{{ f[6].strftime('%d/%m/%Y') if f[6] else '—' }}</td>
+                        <td>
+                            <a href="{{ url_for('notas_fiscais', fornecedor_id=f[7]) }}"
+                               style="background:#4f9cf9;color:#fff;padding:4px 10px;border-radius:5px;font-size:11px;text-decoration:none;white-space:nowrap;">
+                                <i class="bi bi-receipt"></i> NFs
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:14px;font-size:13px;color:#854d0e;">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Nenhum fornecedor cadastrado para <strong>{{ cliente_selecionado_nome }}</strong>.
+        </div>
+        {% endif %}
+    {% else %}
+    <div style="background:#f8fafc;border:1px dashed #e5e7eb;border-radius:8px;padding:20px;text-align:center;color:#94a3b8;font-size:13px;">
+        <i class="bi bi-building" style="font-size:28px;display:block;margin-bottom:8px;"></i>
+        Selecione um cliente acima para ver seus fornecedores vinculados.
+    </div>
+    {% endif %}
+</div>
+
+<!-- ── Scripts dos gráficos ── -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 var aprov = {{ aprovados|int }};
@@ -102,99 +215,4 @@ barras.forEach(function(b) {
         + '</div></div></div>';
 });
 </script>
-<div style="margin-top:16px;background:#fff;border:0.5px solid #e5e7eb;border-radius:10px;padding:16px;">
-    <div style="font-size:14px;font-weight:500;color:#1a2332;margin-bottom:12px;">
-        <i class="bi bi-search me-2"></i>Consultar Cliente e Fornecedores
-    </div>
-    <form method="GET" action="/dashboard/cliente"
-          style="display:flex;gap:10px;align-items:center;margin-bottom:14px;">
-        <select name="cpf"
-                style="flex:1;padding:9px 12px;border:1px solid #e5e7eb;border-radius:7px;font-size:13px;color:#374151;background:#fff;outline:none;">
-            <option value="">Selecionar cliente...</option>
-            {% for c in todos_clientes %}
-            <option value="{{ c[1] }}"
-                {% if cliente and cliente[2] == c[1] %}selected{% endif %}>
-                {{ c[0] }}
-            </option>
-            {% endfor %}
-        </select>
-        <button type="submit"
-                style="background:#4f9cf9;color:#fff;border:none;padding:9px 20px;border-radius:7px;font-size:13px;cursor:pointer;">
-            <i class="bi bi-search"></i> Buscar
-        </button>
-    </form>
-
-    {% if cliente %}
-    <div style="background:#f8fafc;border:0.5px solid #e5e7eb;border-radius:8px;padding:14px;margin-bottom:14px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <strong style="font-size:14px;color:#1a2332;">{{ cliente[1] }}</strong>
-            {% if cliente[3] == 'Aprovado' %}
-                <span class="badge-aprovado">Aprovado</span>
-            {% elif cliente[3] == 'Recusado' %}
-                <span class="badge-recusado">Recusado</span>
-            {% else %}
-                <span class="badge-pendente">Pendente</span>
-            {% endif %}
-        </div>
-        <div style="font-size:12px;color:#64748b;margin-bottom:4px;">
-            CNPJ/CPF: {{ formatar_documento(cliente[2]) }}
-        </div>
-        {% if analise %}
-        <div style="display:flex;gap:16px;margin-top:8px;">
-            <div style="font-size:12px;color:#64748b;">
-                Score: <strong style="color:#1a2332;">{{ analise[0] }}</strong>
-            </div>
-            <div style="font-size:12px;color:#64748b;">
-                Limite: <strong style="color:#1a2332;">{{ formatar_moeda(analise[1]) }}</strong>
-            </div>
-            <div style="font-size:12px;color:#64748b;">
-                Taxa: <strong style="color:#1a2332;">{{ analise[2] }}% a.m.</strong>
-            </div>
-        </div>
-        {% endif %}
-    </div>
-
-    {% if fornecedores_cliente %}
-    <div style="font-size:13px;font-weight:500;color:#1a2332;margin-bottom:8px;">
-        Fornecedores vinculados ({{ fornecedores_cliente|length }})
-    </div>
-    <table class="table table-hover">
-        <thead>
-            <tr>
-                <th>Fornecedor</th>
-                <th>Email</th>
-                <th>Telefone</th>
-                <th>Referência</th>
-                <th>Limite</th>
-                <th>Última Compra</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for f in fornecedores_cliente %}
-            <tr>
-                <td><strong>{{ f[1] }}</strong></td>
-                <td style="color:#64748b;">{{ f[2] or '—' }}</td>
-                <td style="color:#64748b;">{{ f[3] or '—' }}</td>
-                <td>
-                    {% if f[4] == 'Sim' %}
-                        <span class="badge-aprovado">Sim</span>
-                    {% else %}
-                        <span class="badge-recusado">Não</span>
-                    {% endif %}
-                </td>
-                <td>{{ formatar_moeda(f[5]) }}</td>
-                <td style="color:#64748b;">
-                    {{ f[6].strftime('%d/%m/%Y') if f[6] else '—' }}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <div style="font-size:13px;color:#94a3b8;padding:10px 0;">
-        Nenhum fornecedor vinculado a este cliente.
-    </div>
-    {% endif %}
-    {% endif %}
-</div>
 {% endblock %}
