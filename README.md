@@ -1,98 +1,82 @@
-# CréditoEcil — Sistema de Análise de Crédito
+# Sistema de Análise de Crédito — ECIL
+Cliente: Empreendimento Comercial Industrial Ecil LTDA  
+Natureza: Aplicação web interna de gestão e concessão de crédito  
+Desenvolvido por: Amanda G. — UNIP Marquês, Ciência da Computação
 
-Sistema web para análise e gestão de crédito de clientes, desenvolvido com **Flask** e **MySQL**, implantado no **Railway**.
+---
+
+## Descrição
+
+Sistema desenvolvido sob demanda para automatizar o processo de análise e concessão de crédito da empresa Ecil LTDA, substituindo controles manuais por uma plataforma web segura, auditável e com geração de relatórios oficiais.
+
+O sistema realiza a pontuação de crédito de clientes (score 0–1000), sugere limites e taxas de juros, registra histórico de análises e emite relatórios em PDF e Excel — centralizando em banco de dados relacional todas as operações que antes eram realizadas de forma descentralizada.
 
 ---
 
 ## Funcionalidades
 
-- Cadastro e gestão de clientes com score de crédito
-- Cadastro de fornecedores vinculados a cada cliente
-- Registro de notas fiscais por fornecedor
-- Dashboard com gráficos de situação e distribuição de score
-- Relatórios exportáveis em **PDF** e **Excel** (geral ou por cliente)
+- Autenticação de usuários com sessão controlada
+- Cadastro e gestão de clientes com CPF/CNPJ formatados
+- Cálculo automatizado de score de crédito, taxa de juros e limite sugerido
+- Aprovação, recusa ou pendência de crédito por cliente
+- Cadastro e gestão de fornecedores vinculados a cada cliente
+- Registro de notas fiscais por fornecedor com controle de vencimento
+- Geração de relatórios exportáveis em **PDF** e **Excel** (geral ou por cliente)
+- Dashboard com indicadores: aprovados, pendentes, recusados e distribuição de score
 - Filtro de fornecedores por cliente no dashboard
-- Importação de clientes via script Python
+- Importação em massa de clientes e fornecedores via script Python
+- Observações de Serasa por cliente
 
 ---
 
 ## Tecnologias
 
-- Python 3 + Flask
-- MySQL (Railway)
-- Bootstrap 5 + Bootstrap Icons
-- ReportLab (PDF)
-- OpenPyXL (Excel)
+| Camada | Tecnologia |
+|---|---|
+| Back-end | Python 3 · Flask |
+| Banco de Dados | MySQL 8 · InnoDB |
+| Front-end | HTML5 · CSS3 · Bootstrap 5 · Bootstrap Icons · Jinja2 |
+| Relatórios | ReportLab (PDF) · OpenPyXL (Excel) |
+| Gráficos | Chart.js |
+| Implantação | Railway |
+| Versionamento | Git · GitHub |
 
 ---
 
-## Como rodar localmente
+## Como executar
 
-### 1. Clone o repositório
-
-```bash
-git clone https://github.com/AmandaLyyy/ecil-credito.git
-cd ecil-credito/CreditoProjeto/CreditoProjetoI
-```
-
-### 2. Crie e ative o ambiente virtual
+**Pré-requisitos:** Python 3.10+, MySQL 8, pip
 
 ```bash
-python -m venv venv
-# Windows:
-venv\Scripts\activate
-```
+# 1. Clone o repositório
+git clone https://github.com/AmandaLyyy/Analise_Credito.git
+cd Analise_Credito/CreditoProjeto/CreditoProjetoI
 
-### 3. Instale as dependências
-
-```bash
+# 2. Instale as dependências
 pip install -r requirements.txt
-```
 
-### 4. Configure as variáveis de ambiente
-
-Copie o arquivo de exemplo e preencha com seus dados:
-
-```bash
+# 3. Configure as variáveis de ambiente
 cp .env.example .env
-```
+# Edite o .env com suas credenciais do banco
 
-Edite o `.env` com as credenciais do seu banco MySQL.
-
-### 5. Rode a aplicação
-
-```bash
+# 4. Execute a aplicação
 python app.py
+
+# Acesse: http://localhost:5000
 ```
 
-Acesse em: [http://localhost:5000](http://localhost:5000)
-
 ---
 
-## Variáveis de ambiente necessárias
+## Variáveis de ambiente
 
-| Variável | Descrição |
-|---|---|
-| `DB_HOST` | Host do banco de dados |
-| `DB_PORT` | Porta do banco (padrão: 3306) |
-| `DB_NAME` | Nome do banco de dados |
-| `DB_USER` | Usuário do banco |
-| `DB_PASSWORD` | Senha do banco |
-| `SECRET_KEY` | Chave secreta da aplicação Flask |
-
----
-
-## Deploy no Railway
-
-O projeto está configurado para deploy automático via GitHub. Basta conectar o repositório ao Railway e configurar as variáveis de ambiente no painel.
-
----
-
-## Acesso
-
-| Usuário | Senha |
-|---|---|
-| Admin | *(definida internamente)* |
+```env
+DB_HOST=seu_host
+DB_PORT=3306
+DB_NAME=nome_do_banco
+DB_USER=usuario
+DB_PASSWORD=senha
+SECRET_KEY=sua_chave_secreta
+```
 
 ---
 
