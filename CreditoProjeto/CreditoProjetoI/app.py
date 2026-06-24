@@ -177,12 +177,7 @@ def editar_cliente(id):
         situacao  = request.form.get('situacao', 'Pendente')
         serasa    = request.form.get('serasa', '')
         limite    = limpar_valor(request.form.get('limite', 0))
-
-        if limite > 0:
-            cursor.execute("""
-                UPDATE AnalisesCredito SET LimiteSugerido=%s
-                WHERE ClienteID=%s
-            """, (limite, id))
+        score_raw = request.form.get('score', '')
 
         cursor.execute("""
             UPDATE Clientes SET
@@ -190,17 +185,70 @@ def editar_cliente(id):
                 DividasAtuais=%s, SetorAtuacao=%s, Situacao=%s, SerasaObservacao=%s
             WHERE ClienteID=%s
         """, (nome, cpf, historico, dividas, setor, situacao, serasa, id))
+
+        if score_raw and score_raw.strip() and int(score_raw) > 0:
+            score = int(score_raw)
+            if score >= 851:
+                taxa = 1.50
+            elif score >= 701:
+                taxa = 3.00
+            elif score >= 501:
+                taxa = 5.00
+            elif score >= 301:
+                taxa = 8.00
+            else:
+                taxa = 12.00
+
+            cursor.execute("SELECT AnaliseID FROM AnalisesCredito WHERE ClienteID=%s", (id,))
+            analise = cursor.fetchone()
+            if analise:
+                if limite > 0:
+                    cursor.execute("""
+                        UPDATE AnalisesCredito SET PontuacaoCredito=%s, TaxaJuros=%s, LimiteSugerido=%s
+                        WHERE ClienteID=%s
+                    """, (score, taxa, limite, id))
+                else:
+                    cursor.execute("""
+                        UPDATE AnalisesCredito SET PontuacaoCredito=%s, TaxaJuros=%s
+                        WHERE ClienteID=%s
+                    """, (score, taxa, id))
+            else:
+                cursor.execute("""
+                    INSERT INTO AnalisesCredito
+                        (ClienteID, PontuacaoCredito, DecisaoCredito, LimiteSugerido, TaxaJuros)
+                    VALUES (%s, %s, %s, %s, %s)
+                """, (id, score, situacao, limite if limite > 0 else 0, taxa))
+        elif limite > 0:
+            cursor.execute("""
+                UPDATE AnalisesCredito SET LimiteSugerido=%s
+                WHERE ClienteID=%s
+            """, (limite, id))
+
         conn.commit()
         conn.close()
         return redirect(url_for('index'))
+
     cursor.execute("""
         SELECT ClienteID, Nome, CPF, RendaMensal, HistoricoPagamento,
                DividasAtuais, SetorAtuacao, Situacao, SerasaObservacao
         FROM Clientes WHERE ClienteID=%s
     """, (id,))
     cliente = cursor.fetchone()
+
+    cursor.execute("""
+        SELECT PontuacaoCredito, LimiteSugerido
+        FROM AnalisesCredito WHERE ClienteID=%s
+        ORDER BY DataAnalise DESC LIMIT 1
+    """, (id,))
+    analise = cursor.fetchone()
+    score_atual  = analise[0] if analise else ''
+    limite_atual = analise[1] if analise else ''
+
     conn.close()
-    return render_template('editar_cliente.html', cliente=cliente)
+    return render_template('editar_cliente.html',
+                           cliente=cliente,
+                           score_atual=score_atual,
+                           limite_atual=limite_atual)
 
 @app.route('/excluir_cliente/<int:id>')
 def excluir_cliente(id):
