@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block titulo %}Fornecedores{% endblock %}
+{% block conteudo %}
+<div class="card-ecil">
+    <div class="d-flex justify-content-between align-items-center mb-3" style="flex-wrap:wrap;gap:10px;">
+        <span style="font-size:15px;font-weight:600;color:#1a2332;">
+            <i class="bi bi-building me-2"></i>Fornecedores Cadastrados
+        </span>
+        <div style="display:flex;gap:8px;align-items:center;">
+            <div style="position:relative;">
+                <button onclick="toggleMenuForn()"
+                        style="background:#1a2332;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;">
+                    <i class="bi bi-download"></i> Exportar <i class="bi bi-chevron-down" style="font-size:11px;"></i>
+                </button>
+                <div id="menuForn" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:0.5px solid #e5e7eb;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.08);min-width:240px;padding:8px 0;z-index:999;">
+                    <div style="font-size:11px;font-weight:600;color:#94a3b8;padding:6px 14px 4px;text-transform:uppercase;letter-spacing:.5px;">Relatório geral</div>
+                    <a href="{{ url_for('relatorio_fornecedores_pdf') }}"
+                       style="display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:13px;color:#1a2332;text-decoration:none;">
+                        <i class="bi bi-file-earmark-pdf-fill" style="color:#dc2626;font-size:15px;"></i> PDF — todos os clientes
+                    </a>
+                    <a href="{{ url_for('relatorio_fornecedores_excel') }}"
+                       style="display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:13px;color:#1a2332;text-decoration:none;">
+                        <i class="bi bi-file-earmark-excel-fill" style="color:#166534;font-size:15px;"></i> Excel — todos os clientes
+                    </a>
+                    <hr style="margin:6px 0;border-color:#f1f5f9;">
+                    <div style="font-size:11px;font-weight:600;color:#94a3b8;padding:6px 14px 4px;text-transform:uppercase;letter-spacing:.5px;">Por cliente</div>
+                    <div style="padding:0 14px 6px;">
+                        <select id="clienteForn"
+                                style="width:100%;padding:7px 10px;border:0.5px solid #e5e7eb;border-radius:7px;font-size:13px;background:#f8fafc;color:#1a2332;outline:none;margin-bottom:8px;">
+                            <option value="">Selecionar cliente...</option>
+                            {% for c in lista_clientes %}
+                            <option value="{{ c[0] }}">{{ c[1] }}</option>
+                            {% endfor %}
+                        </select>
+                        <div style="display:flex;gap:6px;">
+                            <button onclick="exportarForn('pdf')"
+                                    style="flex:1;padding:7px;background:#fee2e2;color:#991b1b;border:none;border-radius:6px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;">
+                                <i class="bi bi-file-earmark-pdf-fill"></i> PDF
+                            </button>
+                            <button onclick="exportarForn('excel')"
+                                    style="flex:1;padding:7px;background:#dcfce7;color:#166534;border:none;border-radius:6px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;">
+                                <i class="bi bi-file-earmark-excel-fill"></i> Excel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <a href="/cadastro_fornecedor" class="btn-novo">
+                <i class="bi bi-plus-circle-fill"></i> Novo Fornecedor
+            </a>
+        </div>
+    </div>
+
+    <div style="margin-bottom:16px;display:flex;gap:10px;align-items:center;">
+        <div style="position:relative;flex:1;">
+            <i class="bi bi-search" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#94a3b8;"></i>
+            <input type="text" id="busca"
+                   placeholder="Buscar por cliente, fornecedor, email ou telefone..."
+                   onkeyup="filtrarFornecedores()"
+                   style="width:100%;padding:10px 12px 10px 36px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
+        </div>
+        <select id="filtroReferencia" onchange="filtrarFornecedores()"
+                style="padding:10px 14px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;color:#374151;outline:none;background:#fff;">
+            <option value="">Todas as referências</option>
+            <option value="sim">Dá referência</option>
+            <option value="não">Não dá referência</option>
+        </select>
+    </div>
+
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Cliente</th>
+                <th>Fornecedor</th>
+                <th>Email</th>
+                <th>Telefone</th>
+                <th>Referência</th>
+                <th>Limite</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody id="corpoTabela">
+            {% for f in fornecedores %}
+            <tr>
+                <td><strong>{{ f[0] }}</strong></td>
+                <td>{{ f[2] }}</td>
+                <td style="color:#64748b;">{{ f[3] }}</td>
+                <td style="color:#64748b;">{{ f[4] }}</td>
+                <td>
+                    {% if f[6] == 'Sim' %}
+                        <span class="badge-aprovado">Sim</span>
+                    {% else %}
+                        <span class="badge-recusado">Não</span>
+                    {% endif %}
+                </td>
+                <td>{{ formatar_moeda(f[7]) }}</td>
+                <td>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                        <a href="/notas_fiscais/{{ f[9] }}" class="btn-novo" style="padding:5px 11px;font-size:12px;">
+                            <i class="bi bi-file-earmark-text"></i> NFs
+                        </a>
+                        <a href="/editar_fornecedor/{{ f[9] }}"
+                           style="background:#ffc107;color:#000;padding:5px 11px;border-radius:5px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;">
+                            <i class="bi bi-pencil-fill"></i> Editar
+                        </a>
+                        <a href="/excluir_fornecedor/{{ f[9] }}"
+                           style="background:#ef4444;color:#fff;padding:5px 11px;border-radius:5px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;gap:4px;"
+                           onclick="return confirm('Tem certeza?')">
+                            <i class="bi bi-trash-fill"></i> Excluir
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div id="contadorResultados" style="font-size:13px;color:#94a3b8;margin-top:8px;"></div>
+</div>
+
+<script>
+function toggleMenuForn() {
+    var m = document.getElementById('menuForn');
+    m.style.display = m.style.display === 'none' ? 'block' : 'none';
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('[onclick="toggleMenuForn()"]') && !e.target.closest('#menuForn')) {
+        document.getElementById('menuForn').style.display = 'none';
+    }
+});
+
+function exportarForn(tipo) {
+    var id = document.getElementById('clienteForn').value;
+    if (!id) { alert('Selecione um cliente primeiro.'); return; }
+    var url = tipo === 'pdf'
+        ? '{{ url_for("relatorio_fornecedores_pdf") }}?cliente_id=' + id
+        : '{{ url_for("relatorio_fornecedores_excel") }}?cliente_id=' + id;
+    window.location.href = url;
+    document.getElementById('menuForn').style.display = 'none';
+}
+
+function filtrarFornecedores() {
+    const busca      = document.getElementById('busca').value.toLowerCase();
+    const referencia = document.getElementById('filtroReferencia').value.toLowerCase();
+    const linhas     = document.querySelectorAll('#corpoTabela tr');
+    let visiveis     = 0;
+    linhas.forEach(linha => {
+        const texto = linha.textContent.toLowerCase();
+        if (texto.includes(busca) && (referencia === '' || texto.includes(referencia))) {
+            linha.style.display = ''; visiveis++;
+        } else { linha.style.display = 'none'; }
+    });
+    const c = document.getElementById('contadorResultados');
+    c.textContent = (busca || referencia) ? visiveis + ' fornecedor(es) encontrado(s)' : '';
+}
+</script>
+{% endblock %}

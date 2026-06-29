@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block titulo %}Novo Fornecedor{% endblock %}
+{% block conteudo %}
+{% if mensagem %}<div class="alert alert-success mb-3">{{ mensagem }}</div>{% endif %}
+{% if erro %}<div class="alert alert-danger mb-3">{{ erro }}</div>{% endif %}
+<div class="card-ecil" style="max-width:580px;">
+    <div style="font-size:15px;font-weight:600;color:#1a2332;margin-bottom:20px;">
+        <i class="bi bi-plus-circle-fill me-2"></i>Cadastrar Novo Fornecedor
+    </div>
+    <form method="POST" action="/cadastro_fornecedor">
+        <div class="mb-3">
+            <label class="form-label">Cliente vinculado *</label>
+            <select name="cliente_id" class="form-select" required>
+                <option value="">— Selecione o cliente —</option>
+                {% for cliente in clientes %}
+                <option value="{{ cliente[0] }}">{{ cliente[1] }} — {{ cliente[2] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Nome do Fornecedor *</label>
+            <input type="text" name="nome_fornecedor" class="form-control" required placeholder="Ex: Distribuidora Atlântico">
+        </div>
+        <div class="row">
+            <div class="col mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" class="form-control" placeholder="contato@fornecedor.com.br">
+            </div>
+            <div class="col mb-3">
+                <label class="form-label">Telefone</label>
+                <input type="text" name="telefone" class="form-control" placeholder="(11) 99999-9999">
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Nome do Contato</label>
+            <input type="text" name="nome_contato" class="form-control" placeholder="Ex: João Silva">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Fornece Referência?</label>
+            <select name="fornece_referencia" class="form-select">
+                <option value="Sim">Sim</option>
+                <option value="Não">Não</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Limite de Crédito (R$)</label>
+            <input type="text" name="limite_credito" class="form-control" placeholder="Ex: 200.000,00">
+        </div>
+        <div class="row">
+            <div class="col mb-3">
+                <label class="form-label">Data Maior Compra</label>
+                <input type="date" name="maior_compra_data" class="form-control">
+            </div>
+            <div class="col mb-3">
+                <label class="form-label">Valor (R$)</label>
+                <input type="text" name="maior_compra_valor" class="form-control" placeholder="Ex: 107.215,00">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col mb-3">
+                <label class="form-label">Data Última Compra</label>
+                <input type="date" name="ultima_compra_data" class="form-control">
+            </div>
+            <div class="col mb-3">
+                <label class="form-label">Valor (R$)</label>
+                <input type="text" name="ultima_compra_valor" class="form-control" placeholder="Ex: 53.820,16">
+            </div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Data de Cadastro no Fornecedor</label>
+            <input type="date" name="data_cadastro_fornecedor" class="form-control">
+        </div>
+        <button type="submit" class="btn-salvar">
+            <i class="bi bi-check-circle-fill"></i> Cadastrar Fornecedor
+        </button>
+        <a href="/fornecedores" class="btn-cancelar">
+            <i class="bi bi-x-circle"></i> Cancelar
+        </a>
+    </form>
+</div>
+{% endblock %}

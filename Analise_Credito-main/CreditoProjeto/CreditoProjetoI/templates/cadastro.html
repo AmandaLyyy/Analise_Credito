@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block titulo %}Novo Cliente{% endblock %}
+{% block conteudo %}
+{% if mensagem %}
+<div class="alert alert-success mb-3">{{ mensagem }}</div>
+{% endif %}
+<div class="card-ecil" style="max-width:580px;">
+    <div style="font-size:15px;font-weight:600;color:#1a2332;margin-bottom:20px;">
+        <i class="bi bi-person-plus-fill me-2"></i>Cadastrar Novo Cliente
+    </div>
+    <form method="POST" action="/cadastro">
+        <div class="mb-3">
+            <label class="form-label">Nome completo *</label>
+            <input type="text" name="nome" class="form-control" required placeholder="Ex: Peixaria São João LTDA">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">CPF ou CNPJ *</label>
+            <input type="text" name="cpf" class="form-control" required placeholder="000.000.000-00">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Histórico de Pagamento *</label>
+            <select name="historico" class="form-select">
+                <option>Excelente</option>
+                <option selected>Bom</option>
+                <option>Regular</option>
+                <option>Ruim</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Dívidas Atuais (R$)</label>
+            <input type="number" name="dividas" class="form-control" step="0.01" value="0.00">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Setor de Atuação *</label>
+            <select name="setor" class="form-select">
+                <option>Pescados</option>
+                <option>Ingredientes</option>
+                <option>Nutrição Animal</option>
+                <option>Outros</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Observação Serasa</label>
+            <textarea name="serasa" class="form-control" rows="3" placeholder="Alguma observação..."></textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Limite de Crédito Sugerido (R$)</label>
+            <input type="text" name="limite" class="form-control" placeholder="Ex: 50.000,00 (opcional)">
+            <div style="font-size:12px;color:#888;margin-top:4px;">Deixe em branco para não definir limite agora.</div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Pontuação de Crédito (Score)</label>
+            <input type="number" name="score" class="form-control" min="0" max="1000" placeholder="Ex: 750 (0 a 1000)">
+            <div style="font-size:12px;color:#888;margin-top:4px;">
+                0–300 = Recusado (12% a.m.) &nbsp;|&nbsp;
+                301–500 = Pendente (8% a.m.) &nbsp;|&nbsp;
+                501–700 = Aprovado (5% a.m.) &nbsp;|&nbsp;
+                701–850 = Aprovado (3% a.m.) &nbsp;|&nbsp;
+                851–1000 = Aprovado (1,5% a.m.)
+            </div>
+        </div>
+        <button type="submit" class="btn-salvar">
+            <i class="bi bi-check-circle-fill"></i> Cadastrar Cliente
+        </button>
+        <a href="/" class="btn-cancelar">
+            <i class="bi bi-x-circle"></i> Cancelar
+        </a>
+    </form>
+</div>
+{% endblock %}

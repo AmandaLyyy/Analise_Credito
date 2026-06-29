@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% block titulo %}Dashboard{% endblock %}
+{% block conteudo %}
+
+<!-- Cartões de resumo -->
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+    <div style="background:#fff;border:0.5px solid #e5e7eb;border-radius:10px;padding:14px;">
+        <div style="font-size:12px;color:#888;margin-bottom:4px;">Total Clientes</div>
+        <div style="font-size:26px;font-weight:500;color:#1a2332;">{{ clientes_total }}</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:2px;">cadastrados</div>
+    </div>
+    <div style="background:#fff;border:0.5px solid #e5e7eb;border-radius:10px;padding:14px;">
+        <div style="font-size:12px;color:#888;margin-bottom:4px;">Aprovados</div>
+        <div style="font-size:26px;font-weight:500;color:#22c55e;">{{ aprovados }}</div>
+        <div style="font-size:11px;color:#22c55e;margin-top:2px;">{{ pct_aprovados }}% do total</div>
+    </div>
+    <div style="background:#fff;border:0.5px solid #e5e7eb;border-radius:10px;padding:14px;">
+        <div style="font-size:12px;color:#888;margin-bottom:4px;">Fornecedores</div>
+        <div style="font-size:26px;font-weight:500;color:#4f9cf9;">{{ total_fornecedores }}</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:2px;">vinculados</div>
+    </div>
+</div>
+
+<!-- Gráficos -->
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+    <div style="background:#fff;border:0.5px solid #e5e7eb;border-radius:10px;padding:16px;">
+        <div style="font-size:13px;font-weight:500;color:#1a2332;margin-bottom:12px;">Situação dos Clientes</div>
+        <div style="display:flex;align-items:center;gap:20px;">
+            <div style="position:relative;width:110px;height:110px;flex-shrink:0;">
+                <canvas id="graficoPizza" width="110" height="110"></canvas>
+                <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;">
+                    <div style="font-size:18px;font-weight:500;color:#1a2332;">{{ clientes_total }}</div>
+                    <div style="font-size:10px;color:#94a3b8;">clientes</div>
+                </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;align-items:center;gap:7px;">
+                    <div style="width:10px;height:10px;border-radius:50%;background:#0f766e;flex-shrink:0;"></div>
+                    <span style="font-size:12px;color:#64748b;">Aprovados</span>
+                    <strong style="font-size:13px;color:#1a2332;margin-left:6px;">{{ aprovados }}</strong>
+                </div>
+                <div style="display:flex;align-items:center;gap:7px;">
+                    <div style="width:10px;height:10px;border-radius:50%;background:#b45309;flex-shrink:0;"></div>
+                    <span style="font-size:12px;color:#64748b;">Pendentes</span>
+                    <strong style="font-size:13px;color:#1a2332;margin-left:6px;">{{ pendentes }}</strong>
+                </div>
+                <div style="display:flex;align-items:center;gap:7px;">
+                    <div style="width:10px;height:10px;border-radius:50%;background:#9f1239;flex-shrink:0;"></div>
+                    <span style="font-size:12px;color:#64748b;">Recusados</span>
+                    <strong style="font-size:13px;color:#1a2332;margin-left:6px;">{{ recusados }}</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div style="background:#fff;border:0.5px solid #e5e7eb;border-radius:10px;padding:16px;">
+        <div style="font-size:13px;font-weight:500;color:#1a2332;margin-bottom:12px;">Distribuição por Score</div>
+        <div style="display:flex;flex-direction:column;gap:8px;" id="barrasScore"></div>
+    </div>
+</div>
+
+<!-- Card: Fornecedores por cliente -->
+<div style="background:#fff;border:0.5px solid #e5e7eb;border-radius:10px;padding:18px;max-width:480px;">
+    <div style="font-size:13px;font-weight:500;color:#64748b;margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+        <i class="bi bi-building"></i> Fornecedores por cliente
+    </div>
+
+    <form method="GET" action="{{ url_for('dashboard') }}">
+        <select name="cliente_id" onchange="this.form.submit()"
+                style="width:100%;padding:8px 12px;border:0.5px solid #e5e7eb;border-radius:8px;font-size:13px;background:#f8fafc;color:#1a2332;outline:none;margin-bottom:12px;">
+            <option value="">Selecionar cliente...</option>
+            {% for c in lista_clientes %}
+            <option value="{{ c[0] }}" {% if cliente_selecionado_id == c[0] %}selected{% endif %}>
+                {{ c[1] }}
+            </option>
+            {% endfor %}
+        </select>
+    </form>
+
+    {% if cliente_selecionado_id %}
+        {% if fornecedores_do_cliente %}
+        <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">
+            {{ fornecedores_do_cliente|length }} fornecedor(es) vinculado(s)
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+            {% for f in fornecedores_do_cliente %}
+            <div style="display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border-radius:8px;padding:8px 12px;font-size:13px;">
+                <span style="font-weight:500;color:#1a2332;">{{ f[0] }}</span>
+                {% if f[4] == 'Sim' %}
+                    <span style="font-size:11px;color:#166534;background:#dcfce7;padding:2px 8px;border-radius:20px;">Dá ref.</span>
+                {% else %}
+                    <span style="font-size:11px;color:#991b1b;background:#fee2e2;padding:2px 8px;border-radius:20px;">Não dá ref.</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="font-size:13px;color:#94a3b8;text-align:center;padding:16px 0;">
+            Nenhum fornecedor cadastrado para este cliente.
+        </div>
+        {% endif %}
+    {% else %}
+    <div style="font-size:13px;color:#94a3b8;text-align:center;padding:16px 0;">
+        Selecione um cliente para ver os fornecedores.
+    </div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+var aprov = {{ aprovados|int }};
+var pend  = {{ pendentes|int }};
+var recus = {{ recusados|int }};
+var s1    = {{ score_excelente|int }};
+var s2    = {{ score_bom|int }};
+var s3    = {{ score_regular|int }};
+var s4    = {{ score_baixo|int }};
+
+var ctxP = document.getElementById('graficoPizza').getContext('2d');
+new Chart(ctxP, {
+    type: 'doughnut',
+    data: {
+        datasets: [{
+            data: [aprov, pend, recus],
+            backgroundColor: ['#0f766e','#b45309','#9f1239'],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: false,
+        cutout: '68%',
+        plugins: { legend: { display: false }, tooltip: { enabled: true } }
+    }
+});
+
+var barras = [
+    { label: '851–1000', valor: s1, cor: '#0f766e' },
+    { label: '701–850',  valor: s2, cor: '#b45309' },
+    { label: '501–700',  valor: s3, cor: '#0891b2' },
+    { label: '0–500',    valor: s4, cor: '#9f1239' }
+];
+var maxVal = Math.max(s1, s2, s3, s4, 1);
+var cont   = document.getElementById('barrasScore');
+barras.forEach(function(b) {
+    var pct = Math.round((b.valor / maxVal) * 100);
+    cont.innerHTML += '<div style="display:flex;align-items:center;gap:8px;">'
+        + '<span style="font-size:11px;color:#64748b;width:65px;flex-shrink:0;">' + b.label + '</span>'
+        + '<div style="flex:1;background:#f1f5f9;border-radius:4px;height:20px;">'
+        + '<div style="width:' + pct + '%;background:' + b.cor + ';height:100%;border-radius:4px;display:flex;align-items:center;padding-left:6px;min-width:22px;">'
+        + '<span style="font-size:10px;color:#fff;font-weight:500;">' + b.valor + '</span>'
+        + '</div></div></div>';
+});
+</script>
+{% endblock %}

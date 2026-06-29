@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block titulo %}Editar Cliente{% endblock %}
+{% block conteudo %}
+<div class="card-ecil" style="max-width:580px;">
+    <div style="font-size:15px;font-weight:600;color:#1a2332;margin-bottom:20px;">
+        <i class="bi bi-pencil-fill me-2"></i>Editar Cliente
+    </div>
+    <form method="POST">
+        <div class="mb-3">
+            <label class="form-label">Nome completo *</label>
+            <input type="text" name="nome" class="form-control" value="{{ cliente[1] }}" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">CPF ou CNPJ *</label>
+            <input type="text" name="cpf" class="form-control" value="{{ cliente[2] }}" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Histórico de Pagamento *</label>
+            <select name="historico" class="form-select">
+                <option {% if cliente[4]=='Excelente' %}selected{% endif %}>Excelente</option>
+                <option {% if cliente[4]=='Bom' %}selected{% endif %}>Bom</option>
+                <option {% if cliente[4]=='Regular' %}selected{% endif %}>Regular</option>
+                <option {% if cliente[4]=='Ruim' %}selected{% endif %}>Ruim</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Dívidas Atuais (R$)</label>
+            <input type="number" name="dividas" class="form-control" value="{{ cliente[5] }}" step="0.01">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Setor de Atuação *</label>
+            <select name="setor" class="form-select">
+                <option {% if cliente[6]=='Pescados' %}selected{% endif %}>Pescados</option>
+                <option {% if cliente[6]=='Ingredientes' %}selected{% endif %}>Ingredientes</option>
+                <option {% if cliente[6]=='Nutrição Animal' %}selected{% endif %}>Nutrição Animal</option>
+                <option {% if cliente[6]=='Outros' %}selected{% endif %}>Outros</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Situação</label>
+            <select name="situacao" class="form-select">
+                <option {% if cliente[7]=='Pendente' %}selected{% endif %}>Pendente</option>
+                <option {% if cliente[7]=='Aprovado' %}selected{% endif %}>Aprovado</option>
+                <option {% if cliente[7]=='Recusado' %}selected{% endif %}>Recusado</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Observação Serasa</label>
+            <textarea name="serasa" class="form-control" rows="3">{{ cliente[8] }}</textarea>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Limite de Crédito Sugerido (R$)</label>
+            <input type="text" name="limite" class="form-control"
+                   value="{{ limite_atual if limite_atual else '' }}"
+                   placeholder="Ex: 50.000,00 (opcional)">
+            <div style="font-size:12px;color:#888;margin-top:4px;">Deixe em branco para não alterar.</div>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Pontuação de Crédito (Score)</label>
+            <input type="number" name="score" class="form-control"
+                   min="0" max="1000"
+                   value="{{ score_atual if score_atual else '' }}"
+                   placeholder="Ex: 750 (0 a 1000)">
+            <div style="font-size:12px;color:#888;margin-top:4px;">
+                0–300 = Recusado (12% a.m.) &nbsp;|&nbsp;
+                301–500 = Pendente (8% a.m.) &nbsp;|&nbsp;
+                501–700 = Aprovado (5% a.m.) &nbsp;|&nbsp;
+                701–850 = Aprovado (3% a.m.) &nbsp;|&nbsp;
+                851–1000 = Aprovado (1,5% a.m.)
+            </div>
+        </div>
+        <button type="submit" class="btn-salvar">
+            <i class="bi bi-check-circle-fill"></i> Salvar Alterações
+        </button>
+        <a href="/" class="btn-cancelar">
+            <i class="bi bi-x-circle"></i> Cancelar
+        </a>
+    </form>
+</div>
+{% endblock %}

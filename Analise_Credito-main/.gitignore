@@ -1,0 +1,35 @@
+# ── Segurança ──────────────────────────────────────────────────
+.env
+*.env
+.env.*
+!.env.example
+
+# ── Python ─────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyz
+*.egg
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+env/
+
+# ── Scripts de importação (dados sensíveis) ────────────────────
+importar_clientes.py
+
+# ── VS Code ────────────────────────────────────────────────────
+.vscode/
+*.code-workspace
+
+# ── Sistema ────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Logs ───────────────────────────────────────────────────────
+*.log
+logs/
